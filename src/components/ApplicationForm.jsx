@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { DraftSaveStatus, RestoredDraftNotice } from './DraftNotice';
 import { useFormCache } from '../hooks/useFormCache';
+import { useFormProgress } from '../hooks/useFormProgress';
 import { sanitizeFormData } from '../lib/sanitize';
 import { getInitialFormValues } from '../lib/formCache';
 import { submitApplication } from '../lib/supabase';
@@ -66,6 +67,9 @@ export default function ApplicationForm({ onSuccess }) {
     clearCacheOnSubmit,
   } = useFormCache(watch);
 
+  const { percent: progressPercent, filledCount, totalCount } =
+    useFormProgress(watch);
+
   const handleClearDraft = () => {
     if (
       !window.confirm(
@@ -104,7 +108,10 @@ export default function ApplicationForm({ onSuccess }) {
   };
 
   return (
-    <FormLayout>
+    <FormLayout
+      progress={progressPercent}
+      progressLabel={`지원서 작성 진행도 ${progressPercent}% (${filledCount}/${totalCount})`}
+    >
       <header className="mb-10 space-y-4 text-center">
         <h1 className="text-2xl font-bold leading-tight text-gray-900 sm:text-3xl">
           노원유쓰캐스트 13기 신입 국원 모집 지원서

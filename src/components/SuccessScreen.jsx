@@ -2,7 +2,7 @@ import FormLayout from './FormLayout';
 
 export default function SuccessScreen() {
   return (
-    <FormLayout>
+    <FormLayout progress={100} progressLabel="지원서 작성 완료">
       <div className="flex min-h-[60dvh] flex-col items-center justify-center text-center">
         <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-violet-100">
           <svg
