@@ -1,0 +1,24 @@
+# 🤖 Project Rules for Cursor AI Agent
+
+## 1. Framework & Performance Rules
+- Stack: React (Vite, JS), Tailwind CSS, React Router v6, Supabase, react-ga4
+- State Management: MUST use `react-hook-form` with Uncontrolled Components to prevent full-page re-renders on every keystroke.
+- Do NOT use `useState` for binding text inputs/textareas.
+
+## 2. Design System & UI Rules (Tally Style)
+- Replicate Tally.so style: minimal, document-like, centered container (`max-w-2xl mx-auto`).
+- Top Accent Bar: `h-1.5 bg-violet-600` at the very top of the page.
+- Primary Accent: Purple/Violet (`violet-600`).
+- Card UI for notice: `bg-gray-50 border border-gray-100 rounded-2xl p-5`.
+
+## 3. Mobile Optimization (Mandatory)
+- Font size for ALL `<input>` and `<textarea>` MUST be at least `16px` (`text-base`) to prevent iOS auto-zoom on focus.
+- Touch target sizes for buttons must be at least `44px x 44px`.
+- Use `viewport-fit=cover` and iOS Safe Area insets (`env(safe-area-inset-bottom)`).
+
+## 4. Security & Privacy Rules (OWASP Standard)
+- RLS Policy: Only `INSERT` is allowed for public/anon key. Never expose `SELECT` permissions to public.
+- GA4 Analytics: Absolute ZERO PII (Personally Identifiable Information like name, phone, email, text response) sending to GA4. Only send non-identifiable events (`position_selected`, `step_completed`).
+
+## 5. Output Behavior
+- Provide 100% full production-ready code without placeholder comments like `// ... existing code ...`.
