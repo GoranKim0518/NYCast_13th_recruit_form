@@ -62,7 +62,41 @@ npm run build
 npm run preview
 ```
 
-## Git Workflow
+## Vercel 배포
+
+**Production URL:** https://nycast-13th-recruit-form.vercel.app
+
+### 배포 (최초 / 재배포)
+
+```bash
+npm install
+bash scripts/sync-vercel-env.sh   # .env → Vercel 환경 변수 동기화
+npm run deploy                    # Production 배포
+```
+
+> **icn1 에러 해결:** 구버전 전역 Vercel CLI(`vercel@45`)는 업로드 API가 차단됩니다.  
+> `npm run deploy`는 프로젝트 로컬 `vercel@58+`를 사용하므로 `icn1::wgxzr-...` 오류가 발생하지 않습니다.
+
+### GA4 스트림 설정
+
+GA4 Admin → 데이터 스트림 → 웹 URL에 아래 주소를 입력하세요.
+
+```
+https://nycast-13th-recruit-form.vercel.app
+```
+
+측정 ID(`G-XXXXXXXXXX`)를 `.env`의 `VITE_GA_MEASUREMENT_ID`에 넣은 뒤 `sync-vercel-env.sh` → `npm run deploy` 순서로 재배포해야 Production에 반영됩니다.
+
+### Vercel 환경 변수 (필수)
+
+| 변수 | 설명 |
+|------|------|
+| `VITE_SUPABASE_URL` | Supabase Project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon public key |
+| `VITE_GA_MEASUREMENT_ID` | GA4 측정 ID |
+
+Vite는 **빌드 시점**에 `VITE_` 변수를 번들에 포함하므로, 환경 변수 변경 후 반드시 재배포하세요.
+
 
 ### 브랜치 전략
 
