@@ -1,8 +1,14 @@
+import { useEffect } from 'react';
 import FormLayout from './FormLayout';
+import { trackFormCompletedView } from '../lib/analytics';
 
 export default function SuccessScreen() {
+  useEffect(() => {
+    trackFormCompletedView();
+  }, []);
+
   return (
-    <FormLayout progress={100} progressLabel="지원서 작성 완료">
+    <FormLayout>
       <div className="flex min-h-[60dvh] flex-col items-center justify-center text-center">
         <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-violet-100">
           <svg

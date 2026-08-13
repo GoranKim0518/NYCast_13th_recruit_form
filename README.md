@@ -126,17 +126,28 @@ docs: [문서 내용]
 - `public` / `anon` 키로는 **INSERT만** 가능
 - 타인 지원 데이터 **조회·수정·삭제 불가**
 
-### GA4 PII 방지
+### GA4 PII 방지 & 이탈 분석 이벤트
 
-전송되는 이벤트 파라미터 (비식별 메타데이터만):
+**전송 금지:** 이름, 연락처, 이메일, 작성 텍스트 등 모든 PII  
+**Key event (전환):** `form_submitted`
 
-| 이벤트 | 파라미터 |
-|--------|----------|
-| `position_selected` | `position_selected` (지원 분야명) |
-| `step_completed` | `step_name`, `is_completed` |
-| `form_submitted` | `step_name`, `is_completed` |
+| 이벤트 | 파라미터 | 용도 |
+|--------|----------|------|
+| `form_view` | — | 페이지 진입 |
+| `form_engaged` | — | 첫 유효 입력 |
+| `section_reached` | `section_name` | 섹션 진입 (1회) |
+| `field_completed` | `field_name`, `section_name` | 필드 blur + 검증 통과 |
+| `field_error` | `field_name`, `error_type` | 검증 실패 |
+| `position_selected` | `position_selected` | 지원분야 선택 |
+| `submit_attempt` | `position_selected` | 제출 버튼 클릭 |
+| `form_submitted` | `position_selected`, `is_completed` | **전환** |
+| `submit_failed` | `error_type` | Supabase/네트워크 오류 |
+| `form_abandon` | `last_section`, `last_field`, `fields_completed_count`, `position_selected` | 이탈 |
+| `draft_restored` / `draft_cleared` | — | localStorage 초안 |
+| `form_completed_view` | `is_completed` | 완료 화면 |
 
-**전송 금지**: 이름, 연락처, 이메일, 작성 텍스트 등 모든 PII
+GA4 Admin에서 `form_submitted`를 Key event로 등록하고, Exploration 퍼널:
+`form_view → form_engaged → position_selected → submit_attempt → form_submitted`
 
 ### XSS 방어
 

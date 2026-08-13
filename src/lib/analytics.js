@@ -4,9 +4,16 @@ const MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
 
 let initialized = false;
 
+function sendEvent(name, params = {}) {
+  if (!initialized) {
+    return;
+  }
+
+  ReactGA.event(name, params);
+}
+
 /**
  * GA4 초기화 — PII 수집 금지 설정
- * 개인식별정보(이름, 연락처, 이메일, 작성 텍스트 등)는 절대 전송하지 않음
  */
 export function initAnalytics() {
   if (initialized || !MEASUREMENT_ID) {
@@ -24,38 +31,75 @@ export function initAnalytics() {
   initialized = true;
 }
 
-/**
- * @param {string} stepName - 단계명 (예: 'common_info', 'position_specific', 'submit')
- * @param {boolean} isCompleted - 해당 단계 완료 여부
- */
-export function trackStepCompleted(stepName, isCompleted = true) {
-  if (!initialized) return;
+export function trackFormView() {
+  sendEvent('form_view');
+}
 
-  ReactGA.event('step_completed', {
-    step_name: stepName,
-    is_completed: isCompleted,
+export function trackFormEngaged() {
+  sendEvent('form_engaged');
+}
+
+export function trackSectionReached(sectionName) {
+  sendEvent('section_reached', { section_name: sectionName });
+}
+
+export function trackFieldCompleted(fieldName, sectionName) {
+  sendEvent('field_completed', {
+    field_name: fieldName,
+    section_name: sectionName,
   });
 }
 
-/**
- * @param {string} position - 지원 분야명 ('PD' | '홍보마케터' | '디자이너')
- */
+export function trackFieldError(fieldName, errorType) {
+  sendEvent('field_error', {
+    field_name: fieldName,
+    error_type: errorType,
+  });
+}
+
 export function trackPositionSelected(position) {
-  if (!initialized) return;
+  sendEvent('position_selected', { position_selected: position });
+}
 
-  ReactGA.event('position_selected', {
-    position_selected: position,
+export function trackSubmitAttempt(positionSelected) {
+  sendEvent('submit_attempt', {
+    position_selected: positionSelected || '(not set)',
   });
 }
 
-/**
- * @param {boolean} isCompleted - 제출 완료 여부
- */
-export function trackFormSubmitted(isCompleted = true) {
-  if (!initialized) return;
-
-  ReactGA.event('form_submitted', {
-    step_name: 'submit',
-    is_completed: isCompleted,
+export function trackFormSubmitted(positionSelected) {
+  sendEvent('form_submitted', {
+    position_selected: positionSelected || '(not set)',
+    is_completed: true,
   });
+}
+
+export function trackSubmitFailed(errorType) {
+  sendEvent('submit_failed', { error_type: errorType });
+}
+
+export function trackFormAbandon({
+  lastSection,
+  lastField,
+  fieldsCompletedCount,
+  positionSelected,
+}) {
+  sendEvent('form_abandon', {
+    last_section: lastSection,
+    last_field: lastField,
+    fields_completed_count: fieldsCompletedCount,
+    position_selected: positionSelected || '(not set)',
+  });
+}
+
+export function trackDraftRestored() {
+  sendEvent('draft_restored');
+}
+
+export function trackDraftCleared() {
+  sendEvent('draft_cleared');
+}
+
+export function trackFormCompletedView() {
+  sendEvent('form_completed_view', { is_completed: true });
 }

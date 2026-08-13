@@ -1,14 +1,16 @@
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { DraftSaveStatus, RestoredDraftNotice } from './DraftNotice';
+import { useFormAnalytics } from '../hooks/useFormAnalytics';
 import { useFormCache } from '../hooks/useFormCache';
-import { useFormProgress } from '../hooks/useFormProgress';
 import { sanitizeFormData } from '../lib/sanitize';
 import { getInitialFormValues } from '../lib/formCache';
 import { submitApplication } from '../lib/supabase';
 import {
+  trackDraftCleared,
+  trackDraftRestored,
   trackFormSubmitted,
   trackPositionSelected,
-  trackStepCompleted,
 } from '../lib/analytics';
 import {
   buildSubmissionPayload,
@@ -44,12 +46,19 @@ function sanitizeRule(value) {
   return true;
 }
 
+function fieldBlur(onFieldBlur, fieldName) {
+  return () => onFieldBlur(fieldName);
+}
+
 export default function ApplicationForm({ onSuccess }) {
   const {
     register,
     handleSubmit,
     watch,
     reset,
+    trigger,
+    getValues,
+    getFieldState,
     formState: { errors, isSubmitting },
     setError,
   } = useForm({
@@ -67,8 +76,19 @@ export default function ApplicationForm({ onSuccess }) {
     clearCacheOnSubmit,
   } = useFormCache(watch);
 
-  const { percent: progressPercent, filledCount, totalCount } =
-    useFormProgress(watch);
+  const { setSectionRef, onFieldBlur, onSubmitAttempt, onSubmitFailed } =
+    useFormAnalytics({
+      trigger,
+      getValues,
+      getFieldState,
+      position,
+    });
+
+  useEffect(() => {
+    if (isRestored) {
+      trackDraftRestored();
+    }
+  }, [isRestored]);
 
   const handleClearDraft = () => {
     if (
@@ -81,6 +101,7 @@ export default function ApplicationForm({ onSuccess }) {
 
     clearDraft();
     reset(defaultValues);
+    trackDraftCleared();
   };
 
   const onSubmit = async (rawData) => {
@@ -90,10 +111,10 @@ export default function ApplicationForm({ onSuccess }) {
     try {
       await submitApplication(payload);
       clearCacheOnSubmit();
-      trackFormSubmitted(true);
-      trackStepCompleted('submit', true);
+      trackFormSubmitted(data.position);
       onSuccess();
     } catch (err) {
+      onSubmitFailed(err);
       setError('root', {
         message:
           err.message ||
@@ -102,16 +123,18 @@ export default function ApplicationForm({ onSuccess }) {
     }
   };
 
+  const handleFormSubmit = (event) => {
+    onSubmitAttempt();
+    handleSubmit(onSubmit)(event);
+  };
+
   const handlePositionChange = (e) => {
     trackPositionSelected(e.target.value);
-    trackStepCompleted('position_selected', true);
+    onFieldBlur('position');
   };
 
   return (
-    <FormLayout
-      progress={progressPercent}
-      progressLabel={`지원서 작성 진행도 ${progressPercent}% (${filledCount}/${totalCount})`}
-    >
+    <FormLayout>
       <header className="mb-10 space-y-4 text-center">
         <h1 className="text-2xl font-bold leading-tight text-gray-900 sm:text-3xl">
           노원유쓰캐스트 13기 신입 국원 모집 지원서
@@ -155,8 +178,12 @@ export default function ApplicationForm({ onSuccess }) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8" noValidate>
-        <fieldset className="space-y-8">
+      <form onSubmit={handleFormSubmit} className="space-y-8" noValidate>
+        <fieldset
+          ref={setSectionRef('common')}
+          data-section="common"
+          className="space-y-8"
+        >
           <legend className="sr-only">공통 정보</legend>
 
           <TextInput
@@ -166,6 +193,7 @@ export default function ApplicationForm({ onSuccess }) {
             placeholder="홍길동"
             error={errors.name?.message}
             register={register}
+            onAnalyticsBlur={fieldBlur(onFieldBlur, 'name')}
             registerOptions={{
               ...requiredRule('이름을 입력해 주세요.'),
               validate: sanitizeRule,
@@ -180,6 +208,7 @@ export default function ApplicationForm({ onSuccess }) {
             placeholder="2000.01.01"
             error={errors.birth_date?.message}
             register={register}
+            onAnalyticsBlur={fieldBlur(onFieldBlur, 'birth_date')}
             registerOptions={{
               ...requiredRule('생년월일을 입력해 주세요.'),
               validate: sanitizeRule,
@@ -193,6 +222,7 @@ export default function ApplicationForm({ onSuccess }) {
             placeholder="○○대학교 미디어학과 / 24학번"
             error={errors.academic_info?.message}
             register={register}
+            onAnalyticsBlur={fieldBlur(onFieldBlur, 'academic_info')}
             registerOptions={{
               ...requiredRule('학교 정보를 입력해 주세요.'),
               validate: sanitizeRule,
@@ -206,6 +236,7 @@ export default function ApplicationForm({ onSuccess }) {
             placeholder="서울특별시 노원구"
             error={errors.residence?.message}
             register={register}
+            onAnalyticsBlur={fieldBlur(onFieldBlur, 'residence')}
             registerOptions={{
               ...requiredRule('거주지를 입력해 주세요.'),
               validate: sanitizeRule,
@@ -219,6 +250,7 @@ export default function ApplicationForm({ onSuccess }) {
             placeholder="학교, 동아리, 카페 등"
             error={errors.activity_location?.message}
             register={register}
+            onAnalyticsBlur={fieldBlur(onFieldBlur, 'activity_location')}
             registerOptions={{
               ...requiredRule('활동하는 곳을 입력해 주세요.'),
               validate: sanitizeRule,
@@ -233,6 +265,7 @@ export default function ApplicationForm({ onSuccess }) {
             placeholder="010-1234-5678"
             error={errors.phone?.message}
             register={register}
+            onAnalyticsBlur={fieldBlur(onFieldBlur, 'phone')}
             registerOptions={{
               ...requiredRule('연락처를 입력해 주세요.'),
               pattern: {
@@ -251,6 +284,7 @@ export default function ApplicationForm({ onSuccess }) {
             placeholder="example@email.com"
             error={errors.email?.message}
             register={register}
+            onAnalyticsBlur={fieldBlur(onFieldBlur, 'email')}
             registerOptions={{
               ...requiredRule('이메일을 입력해 주세요.'),
               pattern: {
@@ -281,6 +315,7 @@ export default function ApplicationForm({ onSuccess }) {
             placeholder="영감을 얻는 경로, 습관, 매체 등을 자유롭게 작성해 주세요."
             error={errors.inspiration_source?.message}
             register={register}
+            onAnalyticsBlur={fieldBlur(onFieldBlur, 'inspiration_source')}
             registerOptions={{
               ...requiredRule('영감의 출처를 입력해 주세요.'),
               validate: sanitizeRule,
@@ -289,7 +324,11 @@ export default function ApplicationForm({ onSuccess }) {
         </fieldset>
 
         {position === 'PD' && (
-          <fieldset className="space-y-8 border-t border-gray-100 pt-8">
+          <fieldset
+            ref={setSectionRef('pd')}
+            data-section="pd"
+            className="space-y-8 border-t border-gray-100 pt-8"
+          >
             <legend className="mb-2 text-lg font-bold text-gray-900">
               PD 지원 항목
             </legend>
@@ -300,6 +339,7 @@ export default function ApplicationForm({ onSuccess }) {
               placeholder="전략 및 개선점을 작성해 주세요."
               error={errors.pd_strategy?.message}
               register={register}
+              onAnalyticsBlur={fieldBlur(onFieldBlur, 'pd_strategy')}
               registerOptions={{ validate: sanitizeRule }}
             />
 
@@ -310,6 +350,7 @@ export default function ApplicationForm({ onSuccess }) {
               placeholder="프로그램 아이디어를 작성해 주세요."
               error={errors.pd_idea?.message}
               register={register}
+              onAnalyticsBlur={fieldBlur(onFieldBlur, 'pd_idea')}
               registerOptions={{
                 ...requiredRule('프로그램 아이디어를 입력해 주세요.'),
                 validate: sanitizeRule,
@@ -322,6 +363,7 @@ export default function ApplicationForm({ onSuccess }) {
               placeholder="Premiere, Final Cut, CapCut 등"
               error={errors.pd_tools?.message}
               register={register}
+              onAnalyticsBlur={fieldBlur(onFieldBlur, 'pd_tools')}
               registerOptions={{ validate: sanitizeRule }}
             />
 
@@ -331,6 +373,7 @@ export default function ApplicationForm({ onSuccess }) {
               placeholder="관련 경력이나 활동 경험을 작성해 주세요."
               error={errors.pd_experience?.message}
               register={register}
+              onAnalyticsBlur={fieldBlur(onFieldBlur, 'pd_experience')}
               registerOptions={{ validate: sanitizeRule }}
             />
 
@@ -340,6 +383,7 @@ export default function ApplicationForm({ onSuccess }) {
               placeholder="하고 싶은 말을 자유롭게 작성해 주세요."
               error={errors.pd_comment?.message}
               register={register}
+              onAnalyticsBlur={fieldBlur(onFieldBlur, 'pd_comment')}
               registerOptions={{ validate: sanitizeRule }}
             />
 
@@ -350,6 +394,7 @@ export default function ApplicationForm({ onSuccess }) {
               placeholder="인스타그램, 지인 추천, 학교 공지 등"
               error={errors.pd_inflow_channel?.message}
               register={register}
+              onAnalyticsBlur={fieldBlur(onFieldBlur, 'pd_inflow_channel')}
               registerOptions={{
                 ...requiredRule('유입 경로를 입력해 주세요.'),
                 validate: sanitizeRule,
@@ -359,7 +404,11 @@ export default function ApplicationForm({ onSuccess }) {
         )}
 
         {position === '홍보마케터' && (
-          <fieldset className="space-y-8 border-t border-gray-100 pt-8">
+          <fieldset
+            ref={setSectionRef('marketer')}
+            data-section="marketer"
+            className="space-y-8 border-t border-gray-100 pt-8"
+          >
             <legend className="mb-2 text-lg font-bold text-gray-900">
               홍보마케터 지원 항목
             </legend>
@@ -370,6 +419,7 @@ export default function ApplicationForm({ onSuccess }) {
               placeholder="전략 및 개선점을 작성해 주세요."
               error={errors.mkt_strategy?.message}
               register={register}
+              onAnalyticsBlur={fieldBlur(onFieldBlur, 'mkt_strategy')}
               registerOptions={{ validate: sanitizeRule }}
             />
 
@@ -379,6 +429,7 @@ export default function ApplicationForm({ onSuccess }) {
               placeholder="Canva, Photoshop, Meta Ads 등"
               error={errors.mkt_tools?.message}
               register={register}
+              onAnalyticsBlur={fieldBlur(onFieldBlur, 'mkt_tools')}
               registerOptions={{ validate: sanitizeRule }}
             />
 
@@ -388,6 +439,7 @@ export default function ApplicationForm({ onSuccess }) {
               placeholder="관련 경력이나 활동 경험을 작성해 주세요."
               error={errors.mkt_experience?.message}
               register={register}
+              onAnalyticsBlur={fieldBlur(onFieldBlur, 'mkt_experience')}
               registerOptions={{ validate: sanitizeRule }}
             />
 
@@ -397,6 +449,7 @@ export default function ApplicationForm({ onSuccess }) {
               placeholder="하고 싶은 말을 자유롭게 작성해 주세요."
               error={errors.mkt_comment?.message}
               register={register}
+              onAnalyticsBlur={fieldBlur(onFieldBlur, 'mkt_comment')}
               registerOptions={{ validate: sanitizeRule }}
             />
 
@@ -407,6 +460,7 @@ export default function ApplicationForm({ onSuccess }) {
               placeholder="인스타그램, 지인 추천, 학교 공지 등"
               error={errors.mkt_inflow_channel?.message}
               register={register}
+              onAnalyticsBlur={fieldBlur(onFieldBlur, 'mkt_inflow_channel')}
               registerOptions={{
                 ...requiredRule('유입 경로를 입력해 주세요.'),
                 validate: sanitizeRule,
@@ -416,7 +470,11 @@ export default function ApplicationForm({ onSuccess }) {
         )}
 
         {position === '디자이너' && (
-          <fieldset className="space-y-8 border-t border-gray-100 pt-8">
+          <fieldset
+            ref={setSectionRef('designer')}
+            data-section="designer"
+            className="space-y-8 border-t border-gray-100 pt-8"
+          >
             <legend className="mb-2 text-lg font-bold text-gray-900">
               디자이너 지원 항목
             </legend>
@@ -427,6 +485,7 @@ export default function ApplicationForm({ onSuccess }) {
               placeholder="브랜딩, SNS 콘텐츠, 영상 그래픽 등"
               error={errors.des_challenge?.message}
               register={register}
+              onAnalyticsBlur={fieldBlur(onFieldBlur, 'des_challenge')}
               registerOptions={{ validate: sanitizeRule }}
             />
 
@@ -438,6 +497,7 @@ export default function ApplicationForm({ onSuccess }) {
               placeholder="https://portfolio.example.com"
               error={errors.des_portfolio_url?.message}
               register={register}
+              onAnalyticsBlur={fieldBlur(onFieldBlur, 'des_portfolio_url')}
               registerOptions={{
                 ...requiredRule('포트폴리오 URL을 입력해 주세요.'),
                 pattern: {
@@ -455,6 +515,7 @@ export default function ApplicationForm({ onSuccess }) {
               placeholder="하고 싶은 말을 자유롭게 작성해 주세요."
               error={errors.des_comment?.message}
               register={register}
+              onAnalyticsBlur={fieldBlur(onFieldBlur, 'des_comment')}
               registerOptions={{ validate: sanitizeRule }}
             />
 
@@ -465,6 +526,7 @@ export default function ApplicationForm({ onSuccess }) {
               placeholder="인스타그램, 지인 추천, 학교 공지 등"
               error={errors.des_inflow_channel?.message}
               register={register}
+              onAnalyticsBlur={fieldBlur(onFieldBlur, 'des_inflow_channel')}
               registerOptions={{
                 ...requiredRule('유입 경로를 입력해 주세요.'),
                 validate: sanitizeRule,
