@@ -1,5 +1,8 @@
 import { useForm } from 'react-hook-form';
+import { DraftSaveStatus, RestoredDraftNotice } from './DraftNotice';
+import { useFormCache } from '../hooks/useFormCache';
 import { sanitizeFormData } from '../lib/sanitize';
+import { getInitialFormValues } from '../lib/formCache';
 import { submitApplication } from '../lib/supabase';
 import {
   trackFormSubmitted,
@@ -45,14 +48,36 @@ export default function ApplicationForm({ onSuccess }) {
     register,
     handleSubmit,
     watch,
+    reset,
     formState: { errors, isSubmitting },
     setError,
   } = useForm({
-    defaultValues,
+    defaultValues: getInitialFormValues(),
     mode: 'onBlur',
   });
 
   const position = watch('position');
+
+  const {
+    isRestored,
+    lastSavedAt,
+    dismissRestoredNotice,
+    clearDraft,
+    clearCacheOnSubmit,
+  } = useFormCache(watch);
+
+  const handleClearDraft = () => {
+    if (
+      !window.confirm(
+        '저장된 작성 내용을 모두 지울까요? 이 작업은 되돌릴 수 없습니다.',
+      )
+    ) {
+      return;
+    }
+
+    clearDraft();
+    reset(defaultValues);
+  };
 
   const onSubmit = async (rawData) => {
     const data = sanitizeFormData(rawData);
@@ -60,6 +85,7 @@ export default function ApplicationForm({ onSuccess }) {
 
     try {
       await submitApplication(payload);
+      clearCacheOnSubmit();
       trackFormSubmitted(true);
       trackStepCompleted('submit', true);
       onSuccess();
@@ -112,9 +138,15 @@ export default function ApplicationForm({ onSuccess }) {
         </InfoBox>
         <p className="text-sm text-gray-500">
           ※ 표시(<span className="text-red-500">*</span>)가 있는 항목은
-          필수입니다.
+          필수입니다. 작성 중인 내용은 이 기기에 자동 저장됩니다.
         </p>
       </section>
+
+      {isRestored && (
+        <div className="mb-8">
+          <RestoredDraftNotice onDismiss={dismissRestoredNotice} />
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8" noValidate>
         <fieldset className="space-y-8">
@@ -442,6 +474,8 @@ export default function ApplicationForm({ onSuccess }) {
             {errors.root.message}
           </div>
         )}
+
+        <DraftSaveStatus lastSavedAt={lastSavedAt} onClear={handleClearDraft} />
 
         <button
           type="submit"
