@@ -1,28 +1,5 @@
-function HtmlContent({ html }) {
-  if (!html) {
-    return null;
-  }
-
-  return (
-    <div
-      className="form-html"
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
-  );
-}
-
-function FieldHint({ hint }) {
-  if (!hint) {
-    return null;
-  }
-
-  return (
-    <div
-      className="form-hint"
-      dangerouslySetInnerHTML={{ __html: hint }}
-    />
-  );
-}
+import { Children, cloneElement, isValidElement } from 'react';
+import FormHtml from './FormHtml';
 
 export default function FormField({
   label,
@@ -33,6 +10,11 @@ export default function FormField({
   children,
   htmlFor,
 }) {
+  const guidanceId = htmlFor && html ? `${htmlFor}-guidance` : undefined;
+  const hintId = htmlFor && hint ? `${htmlFor}-hint` : undefined;
+  const errorId = htmlFor && error ? `${htmlFor}-error` : undefined;
+  const describedBy = [guidanceId, hintId, errorId].filter(Boolean).join(' ');
+
   return (
     <div className="space-y-2">
       <label
@@ -46,11 +28,21 @@ export default function FormField({
           </span>
         )}
       </label>
-      <HtmlContent html={html} />
-      <FieldHint hint={hint} />
-      {children}
+      <FormHtml html={html} id={guidanceId} />
+      <FormHtml html={hint} className="form-hint" id={hintId} />
+      {Children.map(children, (child) => {
+        if (!isValidElement(child) || !describedBy) {
+          return child;
+        }
+
+        return cloneElement(child, {
+          'aria-describedby': [child.props['aria-describedby'], describedBy]
+            .filter(Boolean)
+            .join(' '),
+        });
+      })}
       {error && (
-        <p className="text-sm text-red-600" role="alert">
+        <p id={errorId} className="text-sm text-red-600" role="alert">
           {error}
         </p>
       )}

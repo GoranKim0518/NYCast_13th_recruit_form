@@ -59,15 +59,26 @@ ${PORTFOLIO_SUBMIT_HTML}`;
 const COMMENT_HTML = `<p>그 외 궁금한 내용은 모집 게시물에 댓글이나 ${mailLink()} 메일,
 ${extLink(INSTAGRAM_URL, '노유캐 인스타그램')} DM 문의 남겨주시면 24시간 내에 답변드립니다(무물보 진행 예정!!)</p>`;
 
-const INFLOW_HTML = `포스터, 전단지, 온라인(Instagram, YouTube, 블로그, 에브리타임, 캠퍼스픽, 링커리어 등등)`;
+const INFLOW_HINT =
+  '포스터, 전단지, 온라인(Instagram, YouTube, 블로그, 에브리타임, 캠퍼스픽, 링커리어 등등)';
 
 export const FIELD_HINTS = {
   academic_info:
     '현재 학생이 아닌 경우: 마지막 학교명과 전공 작성 / 직장인의 경우:  회사명과 직무 작성',
-  phone: '010-XXXX-XXXX 형식으로 입력해 주세요.',
-  inspiration_source: `영감을 주는 레퍼런스 채널(인스타그램, 핀터레스트, 유튜브 등), 책, 음악, 공간, 혹은 자신만의 일상적인 루틴이 있다면 들려주세요.`,
+  residence: '거주지 주소를 동까지만 작성해주세요',
+  activity_location:
+    '학교나 학원, 회사 등 가장 많은 시간을 보내는 곳',
+  phone:
+    '000-0000-0000 형식으로 입력 / 입력하신 내용으로 서류 합격자 발표 연락드립니다. 정확하게 작성해주세요',
+  email:
+    '입력하신 내용으로 서류 합격자 발표 연락드립니다. 정확하게 작성해주세요',
+  inspiration_source:
+    '영감을 주는 레퍼런스 채널(인스타그램, 핀터레스트, 유튜브 등), 책, 음악, 공간, 혹은 자신만의 일상적인 루틴이 있다면 들려주세요.',
   pd_strategy: STRATEGY_HINT,
   mkt_strategy: STRATEGY_HINT,
+  pd_inflow_channel: INFLOW_HINT,
+  mkt_inflow_channel: INFLOW_HINT,
+  des_inflow_channel: INFLOW_HINT,
 };
 
 export const FIELD_HTML = {
@@ -78,9 +89,6 @@ export const FIELD_HTML = {
   pd_comment: COMMENT_HTML,
   mkt_comment: COMMENT_HTML,
   des_comment: COMMENT_HTML,
-  pd_inflow_channel: INFLOW_HTML,
-  mkt_inflow_channel: INFLOW_HTML,
-  des_inflow_channel: INFLOW_HTML,
   pd_idea: `<p>노원유쓰캐스트에서 '노원구'라는 지역을 기반으로 만들고 싶은 영상 콘텐츠 프로그램 아이디어를 자유롭게 작성해주세요</p>`,
   pd_tools: `${SOFTWARE_LIST}
   <p><b>영상제작/디자인/AI 제작 소프트웨어 중 본인이 활용이 가능한 것 + 실력을 모두 적어주세요.</b></p>`,

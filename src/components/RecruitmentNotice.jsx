@@ -1,5 +1,6 @@
 import { RECRUITMENT_INFO } from '../constants/recruitmentInfo';
 import Disclosure from './Disclosure';
+import FormHtml from './FormHtml';
 
 const TEXT_LINKS = [
   {
@@ -11,7 +12,7 @@ const TEXT_LINKS = [
 const TEXT_LINK_PATTERN = new RegExp(
   `(${TEXT_LINKS.map(({ label }) =>
     label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
-  ).join('|')})`,
+  ).join('|')}|<b>[\\s\\S]*?<\\/b>)`,
 );
 
 const TEXT_LINK_HREF = Object.fromEntries(
@@ -21,15 +22,24 @@ const TEXT_LINK_HREF = Object.fromEntries(
 function LinkedText({ text }) {
   return text.split(TEXT_LINK_PATTERN).map((part, index) => {
     const href = TEXT_LINK_HREF[part];
-    if (!href) {
-      return part;
+    if (href) {
+      return (
+        <ExternalLink key={`${part}-${index}`} href={href}>
+          {part}
+        </ExternalLink>
+      );
     }
 
-    return (
-      <ExternalLink key={`${part}-${index}`} href={href}>
-        {part}
-      </ExternalLink>
-    );
+    const boldMatch = part.match(/^<b>([\s\S]*)<\/b>$/);
+    if (boldMatch) {
+      return (
+        <b key={`bold-${index}`} className="font-bold">
+          {boldMatch[1]}
+        </b>
+      );
+    }
+
+    return part;
   });
 }
 
@@ -99,7 +109,7 @@ export default function RecruitmentNotice() {
 
         {introText.map((paragraph) => (
           <p key={paragraph} className="text-base leading-relaxed text-gray-700">
-            {paragraph}
+            <LinkedText text={paragraph} />
           </p>
         ))}
 
@@ -145,6 +155,7 @@ export default function RecruitmentNotice() {
             <h3 className="text-base font-bold text-gray-900">
               {eligibility.title}
             </h3>
+            <FormHtml html={eligibility.note} />
             <BulletList items={eligibility.items} />
             <p className="text-base leading-relaxed text-gray-700">
               {eligibility.subtitle}
@@ -167,7 +178,7 @@ export default function RecruitmentNotice() {
               {schedule.duration}
             </p>
             <dl className="space-y-2">
-              {schedule.timeline.map(({ label, value, highlight }) => (
+              {schedule.timeline.map(({ label, note, value, highlight }) => (
                 <div
                   key={label}
                   className={`flex flex-col gap-0.5 rounded-lg px-3 py-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4 ${
@@ -176,7 +187,14 @@ export default function RecruitmentNotice() {
                       : 'text-gray-700'
                   }`}
                 >
-                  <dt className="text-base">{label}</dt>
+                  <dt className="text-base">
+                    {label}
+                    {note && (
+                      <span className="mt-0.5 block text-sm font-medium">
+                        {note}
+                      </span>
+                    )}
+                  </dt>
                   <dd className="text-base sm:text-right">{value}</dd>
                 </div>
               ))}
@@ -189,7 +207,10 @@ export default function RecruitmentNotice() {
           </div>
 
           <div className="space-y-2">
-            <BulletList items={benefits} />
+            <h3 className="text-base font-bold text-gray-900">
+              {benefits.title}
+            </h3>
+            <BulletList items={benefits.items} />
           </div>
 
           <p className="text-base leading-relaxed text-gray-700">
