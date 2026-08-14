@@ -1,9 +1,42 @@
 import { RECRUITMENT_INFO } from '../constants/recruitmentInfo';
+import Disclosure from './Disclosure';
+
+const TEXT_LINKS = [
+  {
+    label: '노원마을미디어지원센터',
+    href: 'https://nowonmedia.or.kr/',
+  },
+];
+
+const TEXT_LINK_PATTERN = new RegExp(
+  `(${TEXT_LINKS.map(({ label }) =>
+    label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+  ).join('|')})`,
+);
+
+const TEXT_LINK_HREF = Object.fromEntries(
+  TEXT_LINKS.map(({ label, href }) => [label, href]),
+);
+
+function LinkedText({ text }) {
+  return text.split(TEXT_LINK_PATTERN).map((part, index) => {
+    const href = TEXT_LINK_HREF[part];
+    if (!href) {
+      return part;
+    }
+
+    return (
+      <ExternalLink key={`${part}-${index}`} href={href}>
+        {part}
+      </ExternalLink>
+    );
+  });
+}
 
 function MultilineText({ text }) {
   return text.split('\n').map((line, index, lines) => (
     <span key={index}>
-      {line}
+      <LinkedText text={line} />
       {index < lines.length - 1 && <br />}
     </span>
   ));
@@ -26,7 +59,9 @@ function BulletList({ items }) {
   return (
     <ul className="space-y-1 text-base leading-relaxed text-gray-700">
       {items.map((item) => (
-        <li key={item}>{item}</li>
+        <li key={item}>
+          <LinkedText text={item} />
+        </li>
       ))}
     </ul>
   );
@@ -99,35 +134,13 @@ export default function RecruitmentNotice() {
         </div>
       </div>
 
-      <details className="group">
-        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-left transition-colors hover:border-gray-300 hover:bg-gray-100 [&::-webkit-details-marker]:hidden">
-          <span className="min-w-0">
-            <span className="block text-base font-bold text-gray-900 sm:text-lg">
-              {section2.title}
-            </span>
-            <span className="mt-0.5 block text-sm text-gray-500 group-open:hidden">
-              모집 대상, 일정, 혜택 자세히 보기
-            </span>
-          </span>
-          <span className="flex shrink-0 items-center gap-1.5 text-sm font-medium text-gray-500">
-            <span className="group-open:hidden">펼치기</span>
-            <span className="hidden group-open:inline">접기</span>
-            <svg
-              className="h-5 w-5 transition-transform group-open:rotate-180"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                fillRule="evenodd"
-                d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08Z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </span>
-        </summary>
-
-        <div className="mt-6 space-y-6">
+      <Disclosure
+        sectionName="recruitment_details"
+        title={section2.title}
+        closedHint="모집 대상, 일정, 혜택 자세히 보기"
+        panelClassName="mt-6 space-y-6"
+      >
+        <div className="space-y-6">
           <div className="space-y-2">
             <h3 className="text-base font-bold text-gray-900">
               {eligibility.title}
@@ -181,17 +194,14 @@ export default function RecruitmentNotice() {
 
           <p className="text-base leading-relaxed text-gray-700">
             문의:{' '}
-            <a
-              href={`mailto:${contact.email}`}
-              className="text-blue-600 underline underline-offset-2 transition-colors hover:text-blue-800"
-            >
+            <ExternalLink href={`mailto:${contact.email}`}>
               {contact.email}
-            </a>
+            </ExternalLink>
             {' · '}
             <ExternalLink href={contact.instagram}>Instagram</ExternalLink>
           </p>
         </div>
-      </details>
+      </Disclosure>
 
       <div className="overflow-hidden rounded-xl border border-gray-200">
         <img

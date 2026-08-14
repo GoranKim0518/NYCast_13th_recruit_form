@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useFormAnalytics } from '../hooks/useFormAnalytics';
 import { useFormCache } from '../hooks/useFormCache';
@@ -11,13 +11,19 @@ import {
   trackPositionSelected,
 } from '../lib/analytics';
 import {
+  getFirstErrorField,
+  isCollapsedCommonField,
+} from '../utils/formAnalyticsConfig';
+import {
   buildSubmissionPayload,
   EMAIL_REGEX,
   PHONE_REGEX,
   POSITIONS,
   URL_REGEX,
 } from '../utils/formConfig';
+import { scrollElementIntoView } from '../utils/scroll';
 import { RECRUITMENT_INFO } from '../constants/recruitmentInfo';
+import Disclosure from './Disclosure';
 import FormLayout from './FormLayout';
 import RadioGroup from './RadioGroup';
 import RecruitmentNotice from './RecruitmentNotice';
@@ -92,6 +98,175 @@ function fieldBlur(onFieldBlur, fieldName) {
   return () => onFieldBlur(fieldName);
 }
 
+function CommonFields({ errors, register, onFieldBlur, onPositionChange }) {
+  return (
+    <fieldset className="space-y-8">
+      <legend className="sr-only">공통 정보</legend>
+
+      <TextInput
+        maxLength={20}
+        id="name"
+        label="이름"
+        required
+        placeholder="김노리"
+        error={errors.name?.message}
+        register={register}
+        onAnalyticsBlur={fieldBlur(onFieldBlur, 'name')}
+        registerOptions={{
+          ...requiredRule('이름을 입력해 주세요.'),
+          validate: sanitizeRule,
+        }}
+      />
+
+      <TextInput
+        maxLength={8}
+        id="birth_date"
+        label="생년월일(YYYYMMDD)"
+        required
+        placeholder="20070102"
+        error={errors.birth_date?.message}
+        register={register}
+        onAnalyticsBlur={fieldBlur(onFieldBlur, 'birth_date')}
+        registerOptions={{
+          ...requiredRule('생년월일을 입력해 주세요.'),
+          validate: sanitizeRule,
+        }}
+      />
+
+      <TextInput
+        maxLength={150}
+        id="academic_info"
+        label="학교명/전공학과/학번(입학년도)"
+        required
+        placeholder="○○대학교 미디어학과 / 24학번"
+        error={errors.academic_info?.message}
+        register={register}
+        onAnalyticsBlur={fieldBlur(onFieldBlur, 'academic_info')}
+        registerOptions={{
+          ...requiredRule('학교 정보를 입력해 주세요.'),
+          validate: sanitizeRule,
+        }}
+      />
+
+      <TextInput
+        maxLength={150}
+        id="residence"
+        label="거주지"
+        required
+        placeholder="서울특별시 노원구"
+        error={errors.residence?.message}
+        register={register}
+        onAnalyticsBlur={fieldBlur(onFieldBlur, 'residence')}
+        registerOptions={{
+          ...requiredRule('거주지를 입력해 주세요.'),
+          validate: sanitizeRule,
+        }}
+      />
+
+      <TextInput
+        maxLength={100}
+        id="activity_location"
+        label="활동하는 곳"
+        required
+        placeholder="학교, 동아리, 카페 등"
+        error={errors.activity_location?.message}
+        register={register}
+        onAnalyticsBlur={fieldBlur(onFieldBlur, 'activity_location')}
+        registerOptions={{
+          ...requiredRule('활동하는 곳을 입력해 주세요.'),
+          validate: sanitizeRule,
+        }}
+      />
+
+      <TextInput
+        maxLength={13}
+        id="phone"
+        label="연락처"
+        required
+        placeholder="010-0000-0000"
+        error={errors.phone?.message}
+        register={register}
+        onAnalyticsBlur={fieldBlur(onFieldBlur, 'phone')}
+        registerOptions={{
+          ...requiredRule('연락처를 입력해 주세요.'),
+          validate: {
+            sanitize: sanitizeRule,
+            format: (value) =>
+              !value ||
+              PHONE_REGEX.test(value.trim()) ||
+              '010-0000-0000 형식으로 입력해 주세요.',
+          },
+        }}
+      />
+
+      <TextInput
+        id="email"
+        label="E-mail 주소"
+        required
+        placeholder="example@email.com"
+        error={errors.email?.message}
+        register={register}
+        onAnalyticsBlur={fieldBlur(onFieldBlur, 'email')}
+        registerOptions={{
+          ...requiredRule('이메일을 입력해 주세요.'),
+          validate: {
+            sanitize: sanitizeRule,
+            format: (value) =>
+              !value ||
+              EMAIL_REGEX.test(value.trim()) ||
+              '이메일 주소에 @가 포함되어야 합니다.',
+          },
+        }}
+      />
+
+      <RadioGroup
+        name="position"
+        label="지원분야"
+        required
+        options={POSITIONS}
+        error={errors.position?.message}
+        register={register}
+        registerOptions={{
+          ...requiredRule('지원분야를 선택해 주세요.'),
+        }}
+        onChange={onPositionChange}
+      />
+    </fieldset>
+  );
+}
+
+function PositionClosingFields({ prefix, errors, register, onFieldBlur }) {
+  const commentId = `${prefix}_comment`;
+  const inflowId = `${prefix}_inflow_channel`;
+
+  return (
+    <>
+      <TextInput
+        id={commentId}
+        label="마무리 한마디"
+        placeholder="하고 싶은 말을 자유롭게 작성해 주세요."
+        error={errors[commentId]?.message}
+        register={register}
+        onAnalyticsBlur={fieldBlur(onFieldBlur, commentId)}
+        registerOptions={{ validate: sanitizeRule }}
+      />
+      <TextInput
+        id={inflowId}
+        label="유입 경로"
+        required
+        placeholder="인스타그램, 지인 추천, 학교 공지 등"
+        error={errors[inflowId]?.message}
+        register={register}
+        onAnalyticsBlur={fieldBlur(onFieldBlur, inflowId)}
+        registerOptions={{
+          ...requiredRule('유입 경로를 입력해 주세요.'),
+          validate: sanitizeRule,
+        }}
+      />
+    </>
+  );
+}
+
 export default function ApplicationForm({ onSuccess }) {
   const {
     register,
@@ -102,6 +277,7 @@ export default function ApplicationForm({ onSuccess }) {
     getFieldState,
     formState: { errors, isSubmitting },
     setError,
+    setFocus,
   } = useForm({
     defaultValues: getInitialFormValues(),
     mode: 'onBlur',
@@ -109,6 +285,9 @@ export default function ApplicationForm({ onSuccess }) {
   });
 
   const position = watch('position');
+  const commonDisclosureRef = useRef(null);
+  const nextStepRef = useRef(null);
+  const skipAutoScrollRef = useRef(true);
 
   const { isRestored, clearCacheOnSubmit } = useFormCache(watch);
 
@@ -125,6 +304,26 @@ export default function ApplicationForm({ onSuccess }) {
       trackDraftRestored();
     }
   }, [isRestored]);
+
+  useLayoutEffect(() => {
+    if (!position) {
+      commonDisclosureRef.current?.setOpen(true);
+      skipAutoScrollRef.current = false;
+      return;
+    }
+
+    const shouldScroll = !skipAutoScrollRef.current;
+    commonDisclosureRef.current?.setOpen(
+      false,
+      shouldScroll ? 'position_selected' : undefined,
+    );
+
+    if (shouldScroll) {
+      scrollElementIntoView(nextStepRef.current);
+    }
+
+    skipAutoScrollRef.current = false;
+  }, [position]);
 
   const onSubmit = async (rawData) => {
     const data = sanitizeFormData(rawData);
@@ -145,157 +344,72 @@ export default function ApplicationForm({ onSuccess }) {
     }
   };
 
+  const onInvalid = useCallback(
+    (formErrors) => {
+      const firstErrorField = getFirstErrorField(formErrors, position);
+
+      if (firstErrorField && isCollapsedCommonField(firstErrorField)) {
+        commonDisclosureRef.current?.setOpen(true, 'validation_error');
+      }
+
+      if (!firstErrorField) {
+        return;
+      }
+
+      setFocus(firstErrorField);
+      requestAnimationFrame(() => {
+        const active = document.activeElement;
+        if (
+          active instanceof HTMLElement &&
+          (active.id === firstErrorField || active.name === firstErrorField)
+        ) {
+          scrollElementIntoView(active, { block: 'center' });
+        }
+      });
+    },
+    [position, setFocus],
+  );
+
   const handleFormSubmit = (event) => {
     onSubmitAttempt();
-    handleSubmit(onSubmit)(event);
+    handleSubmit(onSubmit, onInvalid)(event);
   };
 
-  const handlePositionChange = (e) => {
-    trackPositionSelected(e.target.value);
-    onFieldBlur('position');
-  };
+  const handlePositionChange = useCallback(
+    (event) => {
+      trackPositionSelected(event.target.value);
+      onFieldBlur('position');
+    },
+    [onFieldBlur],
+  );
 
   return (
     <FormLayout>
-      <RecruitmentNotice />
-
       <form onSubmit={handleFormSubmit} className="space-y-8" noValidate>
-        <fieldset
-          ref={setSectionRef('common')}
-          data-section="common"
-          className="space-y-8"
+        <Disclosure
+          ref={commonDisclosureRef}
+          sectionRef={setSectionRef('common')}
+          dataSection="common"
+          sectionName="common"
+          title="공통 정보"
+          closedHint={position ? `지원분야 ${position}` : undefined}
+          closedAction="변경"
+          showTrigger={Boolean(position)}
         >
-          <legend className="sr-only">공통 정보</legend>
-
-          <TextInput
-            maxLength={20}
-            id="name"
-            label="이름"
-            required
-            placeholder="김노리"
-            error={errors.name?.message}
+          <RecruitmentNotice />
+          <CommonFields
+            errors={errors}
             register={register}
-            onAnalyticsBlur={fieldBlur(onFieldBlur, 'name')}
-            registerOptions={{
-              ...requiredRule('이름을 입력해 주세요.'),
-              validate: sanitizeRule,
-            }}
+            onFieldBlur={onFieldBlur}
+            onPositionChange={handlePositionChange}
           />
+        </Disclosure>
 
-          <TextInput
-            maxLength={8}
-            id="birth_date"
-            label="생년월일(YYYYMMDD)"
-            required
-            placeholder="20070102"
-            error={errors.birth_date?.message}
-            register={register}
-            onAnalyticsBlur={fieldBlur(onFieldBlur, 'birth_date')}
-            registerOptions={{
-              ...requiredRule('생년월일을 입력해 주세요.'),
-              validate: sanitizeRule,
-            }}
-          />
-
-          <TextInput
-            maxLength={150}
-            id="academic_info"
-            label="학교명/전공학과/학번(입학년도)"
-            required
-            placeholder="○○대학교 미디어학과 / 24학번"
-            error={errors.academic_info?.message}
-            register={register}
-            onAnalyticsBlur={fieldBlur(onFieldBlur, 'academic_info')}
-            registerOptions={{
-              ...requiredRule('학교 정보를 입력해 주세요.'),
-              validate: sanitizeRule,
-            }}
-          />
-
-          <TextInput
-            maxLength={150}
-            id="residence"
-            label="거주지"
-            required
-            placeholder="서울특별시 노원구"
-            error={errors.residence?.message}
-            register={register}
-            onAnalyticsBlur={fieldBlur(onFieldBlur, 'residence')}
-            registerOptions={{
-              ...requiredRule('거주지를 입력해 주세요.'),
-              validate: sanitizeRule,
-            }}
-          />
-
-          <TextInput
-            maxLength={100}
-            id="activity_location"
-            label="활동하는 곳"
-            required
-            placeholder="학교, 동아리, 카페 등"
-            error={errors.activity_location?.message}
-            register={register}
-            onAnalyticsBlur={fieldBlur(onFieldBlur, 'activity_location')}
-            registerOptions={{
-              ...requiredRule('활동하는 곳을 입력해 주세요.'),
-              validate: sanitizeRule,
-            }}
-          />
-
-          <TextInput
-            maxLength={13}
-            id="phone"
-            label="연락처"
-            required
-            placeholder="010-0000-0000"
-            error={errors.phone?.message}
-            register={register}
-            onAnalyticsBlur={fieldBlur(onFieldBlur, 'phone')}
-            registerOptions={{
-              ...requiredRule('연락처를 입력해 주세요.'),
-              validate: {
-                sanitize: sanitizeRule,
-                format: (value) =>
-                  !value ||
-                  PHONE_REGEX.test(value.trim()) ||
-                  '010-0000-0000 형식으로 입력해 주세요.',
-              },
-            }}
-          />
-
-          <TextInput
-            id="email"
-            label="E-mail 주소"
-            required
-            placeholder="example@email.com"
-            error={errors.email?.message}
-            register={register}
-            onAnalyticsBlur={fieldBlur(onFieldBlur, 'email')}
-            registerOptions={{
-              ...requiredRule('이메일을 입력해 주세요.'),
-              validate: {
-                sanitize: sanitizeRule,
-                format: (value) =>
-                  !value ||
-                  EMAIL_REGEX.test(value.trim()) ||
-                  '이메일 주소에 @가 포함되어야 합니다.',
-              },
-            }}
-          />
-
-          <RadioGroup
-            name="position"
-            label="지원분야"
-            required
-            options={POSITIONS}
-            error={errors.position?.message}
-            register={register}
-            registerOptions={{
-              ...requiredRule('지원분야를 선택해 주세요.'),
-            }}
-            onChange={handlePositionChange}
-          />
-
+        <div
+          ref={nextStepRef}
+          id="form-position-questions"
+          className="scroll-mt-6 space-y-8"
+        >
           <TextAreaInput
             id="inspiration_source"
             label="[공통] 평소 새로운 아이디어나 기획, 디자인의 영감은 주로 어디서 얻으시나요?"
@@ -309,7 +423,6 @@ export default function ApplicationForm({ onSuccess }) {
               validate: sanitizeRule,
             }}
           />
-        </fieldset>
 
         {position === 'PD' && (
           <PositionSection
@@ -345,7 +458,7 @@ export default function ApplicationForm({ onSuccess }) {
             <TextInput
               id="pd_tools"
               label="사용 가능한 툴과 실력을 모두 적어주세요"
-              placeholder="Premiere, Final Cut, CapCut 등"
+              placeholder="ex. 프리미어프로 / 상"
               error={errors.pd_tools?.message}
               register={register}
               onAnalyticsBlur={fieldBlur(onFieldBlur, 'pd_tools')}
@@ -362,28 +475,11 @@ export default function ApplicationForm({ onSuccess }) {
               registerOptions={{ validate: sanitizeRule }}
             />
 
-            <TextInput
-              id="pd_comment"
-              label="마무리 한마디"
-              placeholder="하고 싶은 말을 자유롭게 작성해 주세요."
-              error={errors.pd_comment?.message}
+            <PositionClosingFields
+              prefix="pd"
+              errors={errors}
               register={register}
-              onAnalyticsBlur={fieldBlur(onFieldBlur, 'pd_comment')}
-              registerOptions={{ validate: sanitizeRule }}
-            />
-
-            <TextInput
-              id="pd_inflow_channel"
-              label="유입 경로"
-              required
-              placeholder="인스타그램, 지인 추천, 학교 공지 등"
-              error={errors.pd_inflow_channel?.message}
-              register={register}
-              onAnalyticsBlur={fieldBlur(onFieldBlur, 'pd_inflow_channel')}
-              registerOptions={{
-                ...requiredRule('유입 경로를 입력해 주세요.'),
-                validate: sanitizeRule,
-              }}
+              onFieldBlur={onFieldBlur}
             />
           </PositionSection>
         )}
@@ -408,7 +504,7 @@ export default function ApplicationForm({ onSuccess }) {
             <TextInput
               id="mkt_tools"
               label="사용 가능한 툴과 실력을 모두 적어주세요"
-              placeholder="Canva, Photoshop, Meta Ads 등"
+              placeholder="ex. 포토샵 / 상, GTQ 1급"
               error={errors.mkt_tools?.message}
               register={register}
               onAnalyticsBlur={fieldBlur(onFieldBlur, 'mkt_tools')}
@@ -425,28 +521,11 @@ export default function ApplicationForm({ onSuccess }) {
               registerOptions={{ validate: sanitizeRule }}
             />
 
-            <TextInput
-              id="mkt_comment"
-              label="마무리 한마디"
-              placeholder="하고 싶은 말을 자유롭게 작성해 주세요."
-              error={errors.mkt_comment?.message}
+            <PositionClosingFields
+              prefix="mkt"
+              errors={errors}
               register={register}
-              onAnalyticsBlur={fieldBlur(onFieldBlur, 'mkt_comment')}
-              registerOptions={{ validate: sanitizeRule }}
-            />
-
-            <TextInput
-              id="mkt_inflow_channel"
-              label="유입 경로"
-              required
-              placeholder="인스타그램, 지인 추천, 학교 공지 등"
-              error={errors.mkt_inflow_channel?.message}
-              register={register}
-              onAnalyticsBlur={fieldBlur(onFieldBlur, 'mkt_inflow_channel')}
-              registerOptions={{
-                ...requiredRule('유입 경로를 입력해 주세요.'),
-                validate: sanitizeRule,
-              }}
+              onFieldBlur={onFieldBlur}
             />
           </PositionSection>
         )}
@@ -487,28 +566,11 @@ export default function ApplicationForm({ onSuccess }) {
               }}
             />
 
-            <TextInput
-              id="des_comment"
-              label="마무리 한마디"
-              placeholder="하고 싶은 말을 자유롭게 작성해 주세요."
-              error={errors.des_comment?.message}
+            <PositionClosingFields
+              prefix="des"
+              errors={errors}
               register={register}
-              onAnalyticsBlur={fieldBlur(onFieldBlur, 'des_comment')}
-              registerOptions={{ validate: sanitizeRule }}
-            />
-
-            <TextInput
-              id="des_inflow_channel"
-              label="유입 경로"
-              required
-              placeholder="인스타그램, 지인 추천, 학교 공지 등"
-              error={errors.des_inflow_channel?.message}
-              register={register}
-              onAnalyticsBlur={fieldBlur(onFieldBlur, 'des_inflow_channel')}
-              registerOptions={{
-                ...requiredRule('유입 경로를 입력해 주세요.'),
-                validate: sanitizeRule,
-              }}
+              onFieldBlur={onFieldBlur}
             />
           </PositionSection>
         )}
@@ -529,6 +591,7 @@ export default function ApplicationForm({ onSuccess }) {
         >
           {isSubmitting ? '제출 중...' : '지원서 제출하기'}
         </button>
+        </div>
       </form>
     </FormLayout>
   );

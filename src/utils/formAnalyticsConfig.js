@@ -80,6 +80,21 @@ export function getRequiredFields(position) {
   return fields;
 }
 
+export function getFirstErrorField(errors, position) {
+  if (!errors) {
+    return undefined;
+  }
+
+  return getRequiredFields(position).find((field) => errors[field]);
+}
+
+export function isCollapsedCommonField(fieldName) {
+  return (
+    FIELD_SECTIONS.common.includes(fieldName) &&
+    fieldName !== 'inspiration_source'
+  );
+}
+
 export function countCompletedRequiredFields(values) {
   return getRequiredFields(values.position).filter((field) =>
     isFieldFilled(values[field]),

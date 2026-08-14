@@ -57,13 +57,15 @@ select {
   margin-top: 0.5rem;
 }
 
-.form-html a {
+.form-html a,
+.form-hint a {
   color: #2563eb;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
-.form-html a:hover {
+.form-html a:hover,
+.form-hint a:hover {
   color: #1e40af;
 }
 
@@ -89,4 +91,15 @@ select {
 
 .form-html ul ul {
   margin-top: 0.25rem;
+}
+
+summary {
+  list-style: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .disclosure-chevron {
+    transition: none;
+  }
 }

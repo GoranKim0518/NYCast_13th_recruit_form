@@ -103,3 +103,15 @@ export function trackDraftCleared() {
 export function trackFormCompletedView() {
   sendEvent('form_completed_view', { is_completed: true });
 }
+
+export function trackFormDisclosure({
+  sectionName,
+  disclosureAction,
+  disclosureTrigger,
+}) {
+  sendEvent('form_disclosure', {
+    section_name: sectionName,
+    disclosure_action: disclosureAction,
+    disclosure_trigger: disclosureTrigger,
+  });
+}

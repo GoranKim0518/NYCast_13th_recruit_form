@@ -138,6 +138,8 @@ export const RECRUITMENT_INFO = {
       contact: {
         email: 'weare@nycast.net',
         instagram: 'https://instagram.com/nowon_youthcast',
+        youtube: 'https://www.youtube.com/@nycast',
+        blog: 'https://blog.naver.com/nycast',
       },
     },
   
