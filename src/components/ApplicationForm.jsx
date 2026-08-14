@@ -1,20 +1,17 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { DraftSaveStatus, RestoredDraftNotice } from './DraftNotice';
 import { useFormAnalytics } from '../hooks/useFormAnalytics';
 import { useFormCache } from '../hooks/useFormCache';
 import { sanitizeFormData } from '../lib/sanitize';
 import { getInitialFormValues } from '../lib/formCache';
 import { submitApplication } from '../lib/supabase';
 import {
-  trackDraftCleared,
   trackDraftRestored,
   trackFormSubmitted,
   trackPositionSelected,
 } from '../lib/analytics';
 import {
   buildSubmissionPayload,
-  defaultValues,
   EMAIL_REGEX,
   PHONE_REGEX,
   POSITIONS,
@@ -55,7 +52,6 @@ export default function ApplicationForm({ onSuccess }) {
     register,
     handleSubmit,
     watch,
-    reset,
     trigger,
     getValues,
     getFieldState,
@@ -68,13 +64,7 @@ export default function ApplicationForm({ onSuccess }) {
 
   const position = watch('position');
 
-  const {
-    isRestored,
-    lastSavedAt,
-    dismissRestoredNotice,
-    clearDraft,
-    clearCacheOnSubmit,
-  } = useFormCache(watch);
+  const { isRestored, clearCacheOnSubmit } = useFormCache(watch);
 
   const { setSectionRef, onFieldBlur, onSubmitAttempt, onSubmitFailed } =
     useFormAnalytics({
@@ -89,20 +79,6 @@ export default function ApplicationForm({ onSuccess }) {
       trackDraftRestored();
     }
   }, [isRestored]);
-
-  const handleClearDraft = () => {
-    if (
-      !window.confirm(
-        '저장된 작성 내용을 모두 지울까요? 이 작업은 되돌릴 수 없습니다.',
-      )
-    ) {
-      return;
-    }
-
-    clearDraft();
-    reset(defaultValues);
-    trackDraftCleared();
-  };
 
   const onSubmit = async (rawData) => {
     const data = sanitizeFormData(rawData);
@@ -137,12 +113,6 @@ export default function ApplicationForm({ onSuccess }) {
     <FormLayout>
       <RecruitmentNotice />
 
-      {isRestored && (
-        <div className="mb-8">
-          <RestoredDraftNotice onDismiss={dismissRestoredNotice} />
-        </div>
-      )}
-
       <form onSubmit={handleFormSubmit} className="space-y-8" noValidate>
         <fieldset
           ref={setSectionRef('common')}
@@ -152,10 +122,11 @@ export default function ApplicationForm({ onSuccess }) {
           <legend className="sr-only">공통 정보</legend>
 
           <TextInput
+            maxLength={20}
             id="name"
             label="이름"
             required
-            placeholder="홍길동"
+            placeholder="김노리"
             error={errors.name?.message}
             register={register}
             onAnalyticsBlur={fieldBlur(onFieldBlur, 'name')}
@@ -166,11 +137,11 @@ export default function ApplicationForm({ onSuccess }) {
           />
 
           <TextInput
+            maxLength={8}
             id="birth_date"
-            label="생년월일"
+            label="생년월일(YYYYMMDD)"
             required
-            hint="예: 2000.01.01 또는 2000-01-01"
-            placeholder="2000.01.01"
+            placeholder="20070102"
             error={errors.birth_date?.message}
             register={register}
             onAnalyticsBlur={fieldBlur(onFieldBlur, 'birth_date')}
@@ -181,9 +152,11 @@ export default function ApplicationForm({ onSuccess }) {
           />
 
           <TextInput
+            maxLength={150}
             id="academic_info"
             label="학교명/전공학과/학번(입학년도)"
             required
+            hint="현재 학생이 아닌 경우: 마지막 학교명과 전공 작성 / 직장인의 경우:  회사명과 직무 작성"
             placeholder="○○대학교 미디어학과 / 24학번"
             error={errors.academic_info?.message}
             register={register}
@@ -195,6 +168,7 @@ export default function ApplicationForm({ onSuccess }) {
           />
 
           <TextInput
+            maxLength={150}
             id="residence"
             label="거주지"
             required
@@ -209,6 +183,7 @@ export default function ApplicationForm({ onSuccess }) {
           />
 
           <TextInput
+            maxLength={100}
             id="activity_location"
             label="활동하는 곳"
             required
@@ -223,11 +198,12 @@ export default function ApplicationForm({ onSuccess }) {
           />
 
           <TextInput
+            maxLength={13}
             id="phone"
             label="연락처"
             required
             hint="010-XXXX-XXXX 형식으로 입력해 주세요."
-            placeholder="010-1234-5678"
+            placeholder="010-0000-0000"
             error={errors.phone?.message}
             register={register}
             onAnalyticsBlur={fieldBlur(onFieldBlur, 'phone')}
@@ -235,7 +211,11 @@ export default function ApplicationForm({ onSuccess }) {
               ...requiredRule('연락처를 입력해 주세요.'),
               pattern: {
                 value: PHONE_REGEX,
-                message: '010-XXXX-XXXX 형식으로 입력해 주세요.',
+                message: '010-0000-0000 형식으로 입력해 주세요.',
+              },
+              maxLength: {
+                value: 13,
+                message: '010-0000-0000 형식으로 입력해 주세요.',
               },
               validate: sanitizeRule,
             }}
@@ -254,7 +234,7 @@ export default function ApplicationForm({ onSuccess }) {
               ...requiredRule('이메일을 입력해 주세요.'),
               pattern: {
                 value: EMAIL_REGEX,
-                message: '올바른 이메일 형식을 입력해 주세요.',
+                message: '이메일 주소에 @가 포함되어야 합니다.',
               },
               validate: sanitizeRule,
             }}
@@ -508,8 +488,6 @@ export default function ApplicationForm({ onSuccess }) {
             {errors.root.message}
           </div>
         )}
-
-        <DraftSaveStatus lastSavedAt={lastSavedAt} onClear={handleClearDraft} />
 
         <button
           type="submit"

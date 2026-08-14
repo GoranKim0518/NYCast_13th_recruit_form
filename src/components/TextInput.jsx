@@ -22,6 +22,7 @@ export default function TextInput({
   error,
   type = 'text',
   placeholder,
+  maxLength,
   register,
   registerOptions,
   onAnalyticsBlur,
@@ -44,6 +45,7 @@ export default function TextInput({
         aria-invalid={error ? 'true' : 'false'}
         aria-required={required ? 'true' : 'false'}
         {...rest}
+        maxLength={maxLength}
         onBlur={mergeBlurHandler(onBlur, onAnalyticsBlur)}
       />
     </FormField>

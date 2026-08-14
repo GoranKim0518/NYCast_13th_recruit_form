@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   SAVE_DEBOUNCE_MS,
   clearFormCache,
@@ -9,7 +9,6 @@ import {
 
 export function useFormCache(watch) {
   const [isRestored, setIsRestored] = useState(false);
-  const [lastSavedAt, setLastSavedAt] = useState(null);
   const debounceRef = useRef(null);
 
   useEffect(() => {
@@ -22,11 +21,6 @@ export function useFormCache(watch) {
       clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
         saveFormCache(data);
-        if (hasMeaningfulDraft(data)) {
-          setLastSavedAt(new Date());
-        } else {
-          setLastSavedAt(null);
-        }
       }, SAVE_DEBOUNCE_MS);
     });
 
@@ -36,21 +30,8 @@ export function useFormCache(watch) {
     };
   }, [watch]);
 
-  const dismissRestoredNotice = useCallback(() => {
-    setIsRestored(false);
-  }, []);
-
-  const clearDraft = useCallback(() => {
-    clearFormCache();
-    setIsRestored(false);
-    setLastSavedAt(null);
-  }, []);
-
   return {
     isRestored,
-    lastSavedAt,
-    dismissRestoredNotice,
-    clearDraft,
     clearCacheOnSubmit: clearFormCache,
   };
 }
