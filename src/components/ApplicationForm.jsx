@@ -17,10 +17,55 @@ import {
   POSITIONS,
   URL_REGEX,
 } from '../utils/formConfig';
+import { RECRUITMENT_INFO } from '../constants/recruitmentInfo';
 import FormLayout from './FormLayout';
 import RadioGroup from './RadioGroup';
 import RecruitmentNotice from './RecruitmentNotice';
 import TextInput, { TextAreaInput } from './TextInput';
+
+const POSITION_ROLE_ID = {
+  PD: 'pd',
+  홍보마케터: 'mkt',
+  디자이너: 'des',
+};
+
+const ROLE_BY_ID = Object.fromEntries(
+  RECRUITMENT_INFO.section2.roles.map((role) => [role.id, role]),
+);
+
+function RoleTasks({ position }) {
+  const role = ROLE_BY_ID[POSITION_ROLE_ID[position]];
+  if (!role) {
+    return null;
+  }
+
+  return (
+    <ul className="space-y-1 text-sm leading-relaxed text-gray-600">
+      {role.tasks.map((task) => (
+        <li key={task}>{task}</li>
+      ))}
+    </ul>
+  );
+}
+
+function PositionSection({ sectionRef, dataSection, title, position, children }) {
+  return (
+    <fieldset
+      ref={sectionRef}
+      data-section={dataSection}
+      className="min-w-0 space-y-8 border-t border-gray-200 pt-8"
+    >
+      <legend className="sr-only">{title}</legend>
+      <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 sm:px-5">
+        <h2 className="text-lg font-bold text-gray-900">{title}</h2>
+        <div className="mt-2">
+          <RoleTasks position={position} />
+        </div>
+      </div>
+      {children}
+    </fieldset>
+  );
+}
 
 function requiredRule(message) {
   return {
@@ -60,6 +105,7 @@ export default function ApplicationForm({ onSuccess }) {
   } = useForm({
     defaultValues: getInitialFormValues(),
     mode: 'onBlur',
+    reValidateMode: 'onBlur',
   });
 
   const position = watch('position');
@@ -156,7 +202,6 @@ export default function ApplicationForm({ onSuccess }) {
             id="academic_info"
             label="학교명/전공학과/학번(입학년도)"
             required
-            hint="현재 학생이 아닌 경우: 마지막 학교명과 전공 작성 / 직장인의 경우:  회사명과 직무 작성"
             placeholder="○○대학교 미디어학과 / 24학번"
             error={errors.academic_info?.message}
             register={register}
@@ -202,22 +247,19 @@ export default function ApplicationForm({ onSuccess }) {
             id="phone"
             label="연락처"
             required
-            hint="010-XXXX-XXXX 형식으로 입력해 주세요."
             placeholder="010-0000-0000"
             error={errors.phone?.message}
             register={register}
             onAnalyticsBlur={fieldBlur(onFieldBlur, 'phone')}
             registerOptions={{
               ...requiredRule('연락처를 입력해 주세요.'),
-              pattern: {
-                value: PHONE_REGEX,
-                message: '010-0000-0000 형식으로 입력해 주세요.',
+              validate: {
+                sanitize: sanitizeRule,
+                format: (value) =>
+                  !value ||
+                  PHONE_REGEX.test(value.trim()) ||
+                  '010-0000-0000 형식으로 입력해 주세요.',
               },
-              maxLength: {
-                value: 13,
-                message: '010-0000-0000 형식으로 입력해 주세요.',
-              },
-              validate: sanitizeRule,
             }}
           />
 
@@ -225,18 +267,19 @@ export default function ApplicationForm({ onSuccess }) {
             id="email"
             label="E-mail 주소"
             required
-            type="email"
             placeholder="example@email.com"
             error={errors.email?.message}
             register={register}
             onAnalyticsBlur={fieldBlur(onFieldBlur, 'email')}
             registerOptions={{
               ...requiredRule('이메일을 입력해 주세요.'),
-              pattern: {
-                value: EMAIL_REGEX,
-                message: '이메일 주소에 @가 포함되어야 합니다.',
+              validate: {
+                sanitize: sanitizeRule,
+                format: (value) =>
+                  !value ||
+                  EMAIL_REGEX.test(value.trim()) ||
+                  '이메일 주소에 @가 포함되어야 합니다.',
               },
-              validate: sanitizeRule,
             }}
           />
 
@@ -269,16 +312,13 @@ export default function ApplicationForm({ onSuccess }) {
         </fieldset>
 
         {position === 'PD' && (
-          <fieldset
-            ref={setSectionRef('pd')}
-            data-section="pd"
-            className="space-y-8 border-t border-gray-100 pt-8"
+          <PositionSection
+            sectionRef={setSectionRef('pd')}
+            dataSection="pd"
+            title="PD 지원 항목"
+            position="PD"
           >
-            <legend className="mb-2 text-lg font-bold text-gray-900">
-              PD 지원 항목
-            </legend>
-
-            <TextInput
+            <TextAreaInput
               id="pd_strategy"
               label="노원유쓰캐스트의 콘텐츠를 더 알리기 위한 홍보 전략/개선점과 그 이유를 함께 작성해 주세요."
               placeholder="전략 및 개선점을 작성해 주세요."
@@ -345,22 +385,19 @@ export default function ApplicationForm({ onSuccess }) {
                 validate: sanitizeRule,
               }}
             />
-          </fieldset>
+          </PositionSection>
         )}
 
         {position === '홍보마케터' && (
-          <fieldset
-            ref={setSectionRef('marketer')}
-            data-section="marketer"
-            className="space-y-8 border-t border-gray-100 pt-8"
+          <PositionSection
+            sectionRef={setSectionRef('marketer')}
+            dataSection="marketer"
+            title="홍보마케터 지원 항목"
+            position="홍보마케터"
           >
-            <legend className="mb-2 text-lg font-bold text-gray-900">
-              홍보마케터 지원 항목
-            </legend>
-
-            <TextInput
+            <TextAreaInput
               id="mkt_strategy"
-              label="노원유쓰캐스트의 콘텐츠를 더 알리기 위한 홍보 전략/개선점과 그 이유를 함께 작성해 주세요."
+              label="노원유쓰캐스트의 콘텐츠를 더 알리기 위한 본인만의 홍보 전략/개선점과 그 이유를 함께 작성해 주세요."
               placeholder="전략 및 개선점을 작성해 주세요."
               error={errors.mkt_strategy?.message}
               register={register}
@@ -411,19 +448,16 @@ export default function ApplicationForm({ onSuccess }) {
                 validate: sanitizeRule,
               }}
             />
-          </fieldset>
+          </PositionSection>
         )}
 
         {position === '디자이너' && (
-          <fieldset
-            ref={setSectionRef('designer')}
-            data-section="designer"
-            className="space-y-8 border-t border-gray-100 pt-8"
+          <PositionSection
+            sectionRef={setSectionRef('designer')}
+            dataSection="designer"
+            title="디자이너 지원 항목"
+            position="디자이너"
           >
-            <legend className="mb-2 text-lg font-bold text-gray-900">
-              디자이너 지원 항목
-            </legend>
-
             <TextInput
               id="des_challenge"
               label="노원유쓰캐스트에서 가장 도전해보고 싶은 디자인 작업은 무엇인가요?"
@@ -438,7 +472,6 @@ export default function ApplicationForm({ onSuccess }) {
               id="des_portfolio_url"
               label="디자이너 포트폴리오 제출"
               required
-              hint="http:// 또는 https:// 로 시작하는 URL을 입력해 주세요."
               placeholder="https://portfolio.example.com"
               error={errors.des_portfolio_url?.message}
               register={register}
@@ -477,7 +510,7 @@ export default function ApplicationForm({ onSuccess }) {
                 validate: sanitizeRule,
               }}
             />
-          </fieldset>
+          </PositionSection>
         )}
 
         {errors.root && (
