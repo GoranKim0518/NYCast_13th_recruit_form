@@ -8,6 +8,11 @@ React + Vite + Tailwind CSS + Supabase + GA4 스택으로 구성되어 있습니
 - **Tally 스타일 UI**: 미니멀하고 문서형 레이아웃, 보라색 액센트
 - **직군별 조건부 폼**: PD / 홍보마케터 / 디자이너 선택에 따른 분기
 - **보안**: Supabase RLS (INSERT 전용), XSS 입력값 검증, GA4 PII 미수집
+
+운영 문서:
+
+- [채널별 UTM 링크](docs/utm-campaigns.md)
+- [GA4 · GTM 연결 / 시트 4시간 동기화](docs/ga4-gtm-and-sheets.md)
 - **모바일 최적화**: iOS 자동 줌 방지 (16px), 44px 터치 타겟, Safe Area 대응
 
 ## 기술 스택
@@ -161,29 +166,79 @@ docs: [문서 내용]
 
 - `public` / `anon` 키로는 **INSERT만** 가능
 - 타인 지원 데이터 **조회·수정·삭제 불가**
+- `client_submission_id` UNIQUE — 제출 중 네트워크가 끊겨도 같은 지원서가 두 번 들어가지 않음
 
-### GA4 PII 방지 & 이탈 분석 이벤트
+기존 테이블이면 SQL Editor에서 한 번 실행:
+
+```sql
+ALTER TABLE public.applications
+  ADD COLUMN IF NOT EXISTS client_submission_id UUID;
+CREATE UNIQUE INDEX IF NOT EXISTS applications_client_submission_id_uidx
+  ON public.applications (client_submission_id);
+```
+
+### GA4 마케팅 분석 설정
 
 **전송 금지:** 이름, 연락처, 이메일, 작성 텍스트 등 모든 PII  
-**Key event (전환):** `form_submitted`
+**핵심 이벤트(전환):** `generate_lead`, `form_submitted`
 
-| 이벤트 | 파라미터 | 용도 |
-|--------|----------|------|
-| `form_view` | — | 페이지 진입 |
-| `form_engaged` | — | 첫 유효 입력 |
-| `section_reached` | `section_name` | 섹션 진입 (1회) |
-| `field_completed` | `field_name`, `section_name` | 필드 blur + 검증 통과 |
-| `field_error` | `field_name`, `error_type` | 검증 실패 |
-| `position_selected` | `position_selected` | 지원분야 선택 |
-| `submit_attempt` | `position_selected` | 제출 버튼 클릭 |
-| `form_submitted` | `position_selected`, `is_completed` | **전환** |
-| `submit_failed` | `error_type` | Supabase/네트워크 오류 |
-| `form_abandon` | `last_section`, `last_field`, `fields_completed_count`, `position_selected` | 이탈 |
-| `draft_restored` / `draft_cleared` | — | localStorage 초안 |
-| `form_completed_view` | `is_completed` | 완료 화면 |
+랜딩 URL에 UTM을 붙이면 세션 획득(소스/매체/캠페인)과 모든 이벤트 파라미터에 같이 남습니다.
 
-GA4 Admin에서 `form_submitted`를 Key event로 등록하고, Exploration 퍼널:
-`form_view → form_engaged → position_selected → submit_attempt → form_submitted`
+```
+https://nycast-13th-recruit-form.vercel.app/?utm_source=instagram&utm_medium=social&utm_campaign=13th_recruit&utm_content=cardnews
+```
+
+#### Admin에서 할 일
+
+1. 데이터 스트림 웹 URL: `https://nycast-13th-recruit-form.vercel.app`
+2. 향상된 측정 → **양식 상호작용 OFF** (폼 이벤트는 코드에서 직접 전송)
+3. 관리 → 이벤트 → `generate_lead`, `form_submitted`를 **핵심 이벤트로 표시**
+4. 관리 → 맞춤 정의에 아래 이벤트 매개변수를 등록 (범위: 이벤트)
+5. 관리 → 맞춤 정의 → `selected_position` (범위: 사용자)
+6. 관리 → 데이터 필터/비교: `hostname`이 `localhost`인 세션 제외
+
+| 매개변수 | 용도 |
+|----------|------|
+| `campaign_source` | 유입 소스 (utm_source / 리퍼러 / direct) |
+| `campaign_medium` | 유입 매체 |
+| `campaign_name` | 캠페인명 |
+| `campaign_content` | 소재 구분 |
+| `campaign_term` | 검색어 |
+| `position_selected` | 지원 직군 |
+| `section_name` | 폼 섹션 |
+| `field_name` | 필드 |
+| `error_type` | 검증/제출 오류 유형 |
+| `last_section` / `last_field` | 이탈 직전 위치 |
+| `fields_completed_count` | 이탈 시 완료한 필수 필드 수 |
+| `form_session_id` | 세션 단위 유니크 키 (PII 아님, DB 제출 ID와 분리) |
+| `has_gclid` / `has_fbclid` | 광고 클릭 여부 |
+| `lead_source` | `generate_lead` 유입 소스 |
+
+#### 이벤트
+
+| 이벤트 | 언제 | 비고 |
+|--------|------|------|
+| `page_view` | 진입 (쿼리스트링 포함) | GA4 획득 보고서에 UTM 반영 |
+| `form_view` | 폼 마운트 | 커스텀 퍼널 시작 |
+| `form_engaged` / `form_start` | 첫 유효 입력 | `form_start`는 GA4 권장 이벤트 |
+| `section_reached` | 섹션 30% 노출, 1회 | |
+| `field_completed` | blur + 검증 통과 | |
+| `field_error` | 검증 실패 | |
+| `position_selected` | 직군 선택 | 사용자 속성 `selected_position`도 설정 |
+| `submit_attempt` / `form_submit` | **검증 통과 후** 제출 | 유효성 실패는 제외 |
+| `form_submitted` / `generate_lead` | DB 저장 성공 | 전환 |
+| `submit_failed` | 네트워크/서버 오류 | `offline`, `timeout`, `config` 등 |
+| `form_abandon` | 실제 페이지 이탈 (`pagehide`) | 탭 전환은 제외, beacon 전송 |
+| `draft_restored` / `draft_cleared` | 초안 복원/제출 후 삭제 | |
+| `form_completed_view` | 완료 화면 | |
+
+Exploration 퍼널:
+
+`form_view → form_start → position_selected → submit_attempt → generate_lead`
+
+획득 보고서:
+
+`캠페인 소스/매체 → generate_lead`
 
 ### XSS 방어
 
