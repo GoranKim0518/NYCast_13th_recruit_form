@@ -1,6 +1,33 @@
+function HtmlContent({ html }) {
+  if (!html) {
+    return null;
+  }
+
+  return (
+    <div
+      className="form-html"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
+function FieldHint({ hint }) {
+  if (!hint) {
+    return null;
+  }
+
+  return (
+    <div
+      className="form-hint"
+      dangerouslySetInnerHTML={{ __html: hint }}
+    />
+  );
+}
+
 export default function FormField({
   label,
   required = false,
+  html,
   hint,
   error,
   children,
@@ -19,7 +46,8 @@ export default function FormField({
           </span>
         )}
       </label>
-      {hint && <p className="text-sm text-gray-500">{hint}</p>}
+      <HtmlContent html={html} />
+      <FieldHint hint={hint} />
       {children}
       {error && (
         <p className="text-sm text-red-600" role="alert">

@@ -1,10 +1,12 @@
 import FormField from './FormField';
+import { getFieldHint, getFieldHtml } from '../constants/formHints';
 
 export default function RadioGroup({
   name,
   label,
   required,
   hint,
+  html,
   error,
   options,
   register,
@@ -15,7 +17,8 @@ export default function RadioGroup({
     <FormField
       label={label}
       required={required}
-      hint={hint}
+      html={getFieldHtml(name, html)}
+      hint={getFieldHint(name, hint)}
       error={error}
       htmlFor={`${name}-${options[0]}`}
     >

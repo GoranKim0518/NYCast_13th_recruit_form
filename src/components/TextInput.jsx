@@ -1,4 +1,5 @@
 import FormField from './FormField';
+import { getFieldHint, getFieldHtml } from '../constants/formHints';
 
 const inputClassName =
   'w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-400 transition-colors focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20';
@@ -19,6 +20,7 @@ export default function TextInput({
   label,
   required,
   hint,
+  html,
   error,
   type = 'text',
   placeholder,
@@ -27,13 +29,24 @@ export default function TextInput({
   registerOptions,
   onAnalyticsBlur,
 }) {
-  const { onBlur, ...rest } = register(id, registerOptions);
+  const { onBlur, ...rest } = register(id, {
+    ...registerOptions,
+    ...(maxLength
+      ? {
+          maxLength: {
+            value: maxLength,
+            message: `${maxLength}자 이하로 입력해 주세요.`,
+          },
+        }
+      : {}),
+  });
 
   return (
     <FormField
       label={label}
       required={required}
-      hint={hint}
+      html={getFieldHtml(id, html)}
+      hint={getFieldHint(id, hint)}
       error={error}
       htmlFor={id}
     >
@@ -45,7 +58,6 @@ export default function TextInput({
         aria-invalid={error ? 'true' : 'false'}
         aria-required={required ? 'true' : 'false'}
         {...rest}
-        maxLength={maxLength}
         onBlur={mergeBlurHandler(onBlur, onAnalyticsBlur)}
       />
     </FormField>
@@ -57,6 +69,7 @@ export function TextAreaInput({
   label,
   required,
   hint,
+  html,
   error,
   placeholder,
   rows = 5,
@@ -70,7 +83,8 @@ export function TextAreaInput({
     <FormField
       label={label}
       required={required}
-      hint={hint}
+      html={getFieldHtml(id, html)}
+      hint={getFieldHint(id, hint)}
       error={error}
       htmlFor={id}
     >
