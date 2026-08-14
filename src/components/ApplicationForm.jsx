@@ -6,6 +6,7 @@ import { sanitizeFormData } from '../lib/sanitize';
 import { getInitialFormValues } from '../lib/formCache';
 import { submitApplication } from '../lib/supabase';
 import {
+  trackDraftCleared,
   trackDraftRestored,
   trackFormSubmitted,
   trackPositionSelected,
@@ -153,7 +154,7 @@ function CommonFields({ errors, register, onFieldBlur, onPositionChange }) {
         id="residence"
         label="거주지"
         required
-        placeholder="서울특별시 노원구"
+        placeholder="ex.서울시 노원구 상계동"
         error={errors.residence?.message}
         register={register}
         onAnalyticsBlur={fieldBlur(onFieldBlur, 'residence')}
@@ -168,7 +169,7 @@ function CommonFields({ errors, register, onFieldBlur, onPositionChange }) {
         id="activity_location"
         label="활동하는 곳"
         required
-        placeholder="학교, 동아리, 카페 등"
+        placeholder="ex.광운대학교"
         error={errors.activity_location?.message}
         register={register}
         onAnalyticsBlur={fieldBlur(onFieldBlur, 'activity_location')}
@@ -291,13 +292,18 @@ export default function ApplicationForm({ onSuccess }) {
 
   const { isRestored, clearCacheOnSubmit } = useFormCache(watch);
 
-  const { setSectionRef, onFieldBlur, onSubmitAttempt, onSubmitFailed } =
-    useFormAnalytics({
-      trigger,
-      getValues,
-      getFieldState,
-      position,
-    });
+  const {
+    setSectionRef,
+    onFieldBlur,
+    onSubmitAttempt,
+    onSubmitFailed,
+    markFormSubmitted,
+  } = useFormAnalytics({
+    trigger,
+    getValues,
+    getFieldState,
+    position,
+  });
 
   useEffect(() => {
     if (isRestored) {
@@ -329,9 +335,13 @@ export default function ApplicationForm({ onSuccess }) {
     const data = sanitizeFormData(rawData);
     const payload = buildSubmissionPayload(data);
 
+    onSubmitAttempt();
+
     try {
       await submitApplication(payload);
+      markFormSubmitted();
       clearCacheOnSubmit();
+      trackDraftCleared();
       trackFormSubmitted(data.position);
       onSuccess();
     } catch (err) {
@@ -371,7 +381,6 @@ export default function ApplicationForm({ onSuccess }) {
   );
 
   const handleFormSubmit = (event) => {
-    onSubmitAttempt();
     handleSubmit(onSubmit, onInvalid)(event);
   };
 
@@ -414,7 +423,7 @@ export default function ApplicationForm({ onSuccess }) {
             id="inspiration_source"
             label="[공통] 평소 새로운 아이디어나 기획, 디자인의 영감은 주로 어디서 얻으시나요?"
             required
-            placeholder="영감을 얻는 경로, 습관, 매체 등을 자유롭게 작성해 주세요."
+            placeholder="영감을 얻는 경로, 매체 등을 자유롭게 작성해 주세요."
             error={errors.inspiration_source?.message}
             register={register}
             onAnalyticsBlur={fieldBlur(onFieldBlur, 'inspiration_source')}

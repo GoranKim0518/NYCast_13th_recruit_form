@@ -122,12 +122,17 @@ export function mapValidationErrorType(error) {
 }
 
 export function classifySubmitError(error) {
+  if (error?.code) {
+    return error.code;
+  }
+
   const message = (error?.message ?? '').toLowerCase();
 
   if (
     message.includes('network') ||
     message.includes('fetch') ||
-    message.includes('failed to fetch')
+    message.includes('failed to fetch') ||
+    message.includes('offline')
   ) {
     return 'network';
   }

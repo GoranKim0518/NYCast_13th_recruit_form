@@ -1,34 +1,75 @@
 import ReactGA from 'react-ga4';
+import {
+  captureCampaignContext,
+  getAnalyticsSessionId,
+  getCampaignEventParams,
+} from './campaign';
 
 const MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
+const FORM_NAME = 'nycast_13th_recruit';
 
 let initialized = false;
+let viewedAt = 0;
 
-function sendEvent(name, params = {}) {
+function engagementTimeMsec() {
+  return viewedAt ? Math.max(0, Date.now() - viewedAt) : 0;
+}
+
+function baseParams() {
+  return {
+    form_name: FORM_NAME,
+    form_session_id: getAnalyticsSessionId(),
+    engagement_time_msec: engagementTimeMsec(),
+    ...getCampaignEventParams(),
+  };
+}
+
+function sendEvent(name, params = {}, { beacon = false } = {}) {
   if (!initialized) {
     return;
   }
 
-  ReactGA.event(name, params);
+  const payload = {
+    ...baseParams(),
+    ...params,
+  };
+
+  if (beacon) {
+    payload.transport_type = 'beacon';
+  }
+
+  ReactGA.event(name, payload);
 }
 
-/**
- * GA4 초기화 — PII 수집 금지 설정
- */
 export function initAnalytics() {
   if (initialized || !MEASUREMENT_ID) {
     return;
   }
 
+  captureCampaignContext();
+  getAnalyticsSessionId();
+
   ReactGA.initialize(MEASUREMENT_ID, {
     gaOptions: {
       anonymize_ip: true,
+    },
+    gtagOptions: {
+      anonymize_ip: true,
       allow_google_signals: false,
       allow_ad_personalization_signals: false,
+      send_page_view: false,
+      debug_mode: Boolean(import.meta.env.DEV),
     },
   });
 
   initialized = true;
+  viewedAt = Date.now();
+
+  ReactGA.send({
+    hitType: 'pageview',
+    page: `${window.location.pathname}${window.location.search}`,
+    title: document.title,
+  });
 }
 
 export function trackFormView() {
@@ -37,6 +78,7 @@ export function trackFormView() {
 
 export function trackFormEngaged() {
   sendEvent('form_engaged');
+  sendEvent('form_start', { form_name: FORM_NAME });
 }
 
 export function trackSectionReached(sectionName) {
@@ -58,18 +100,40 @@ export function trackFieldError(fieldName, errorType) {
 }
 
 export function trackPositionSelected(position) {
-  sendEvent('position_selected', { position_selected: position });
+  if (initialized && position) {
+    ReactGA.gtag('set', 'user_properties', {
+      selected_position: position,
+    });
+  }
+
+  sendEvent('position_selected', {
+    position_selected: position,
+  });
 }
 
 export function trackSubmitAttempt(positionSelected) {
   sendEvent('submit_attempt', {
     position_selected: positionSelected || '(not set)',
   });
+  sendEvent('form_submit', {
+    form_name: FORM_NAME,
+    position_selected: positionSelected || '(not set)',
+  });
 }
 
 export function trackFormSubmitted(positionSelected) {
+  const position = positionSelected || '(not set)';
+  const campaign = getCampaignEventParams();
+
   sendEvent('form_submitted', {
-    position_selected: positionSelected || '(not set)',
+    position_selected: position,
+    is_completed: true,
+  });
+  sendEvent('generate_lead', {
+    currency: 'KRW',
+    value: 1,
+    lead_source: campaign.campaign_source,
+    position_selected: position,
     is_completed: true,
   });
 }
@@ -84,12 +148,16 @@ export function trackFormAbandon({
   fieldsCompletedCount,
   positionSelected,
 }) {
-  sendEvent('form_abandon', {
-    last_section: lastSection,
-    last_field: lastField,
-    fields_completed_count: fieldsCompletedCount,
-    position_selected: positionSelected || '(not set)',
-  });
+  sendEvent(
+    'form_abandon',
+    {
+      last_section: lastSection,
+      last_field: lastField,
+      fields_completed_count: fieldsCompletedCount,
+      position_selected: positionSelected || '(not set)',
+    },
+    { beacon: true },
+  );
 }
 
 export function trackDraftRestored() {

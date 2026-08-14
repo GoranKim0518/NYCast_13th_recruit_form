@@ -2,6 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUBMIT_TIMEOUT_MS = 20000;
+const SUBMISSION_ID_KEY = 'nycast_13th_submission_id';
 
 const isConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
@@ -19,16 +21,112 @@ export function isSupabaseConfigured() {
   return isConfigured;
 }
 
+export class SubmitError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.name = 'SubmitError';
+    this.code = code;
+  }
+}
+
+function getLocalStorage() {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+export function getOrCreateSubmissionId() {
+  const storage = getLocalStorage();
+  const existing = storage?.getItem(SUBMISSION_ID_KEY);
+
+  if (existing) {
+    return existing;
+  }
+
+  const id = crypto.randomUUID();
+  storage?.setItem(SUBMISSION_ID_KEY, id);
+  return id;
+}
+
+export function clearSubmissionId() {
+  getLocalStorage()?.removeItem(SUBMISSION_ID_KEY);
+}
+
+function isOffline() {
+  return typeof navigator !== 'undefined' && navigator.onLine === false;
+}
+
+function toSubmitError(error, signal) {
+  if (error instanceof SubmitError) {
+    return error;
+  }
+
+  const aborted = error?.name === 'AbortError' || signal?.aborted;
+  if (aborted || isOffline()) {
+    if (signal?.reason === 'timeout') {
+      return new SubmitError(
+        'timeout',
+        '서버 응답이 지연되고 있습니다. 연결 상태를 확인한 뒤 다시 제출해 주세요. 작성 내용은 저장되어 있습니다.',
+      );
+    }
+
+    return new SubmitError(
+      'offline',
+      '제출 중 인터넷 연결이 끊어졌습니다. 연결 후 다시 제출해 주세요. 같은 지원서는 중복 저장되지 않습니다.',
+    );
+  }
+
+  return new SubmitError(
+    'unknown',
+    error?.message ||
+      '제출 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
+  );
+}
+
 export async function submitApplication(data) {
   if (!supabase) {
-    throw new Error(
+    throw new SubmitError(
+      'config',
       'Supabase가 설정되지 않았습니다. 관리자에게 문의해 주세요.',
     );
   }
 
-  const { error } = await supabase.from('applications').insert([data]);
+  if (isOffline()) {
+    throw new SubmitError(
+      'offline',
+      '인터넷 연결이 끊어졌습니다. 연결 후 다시 제출해 주세요. 작성 내용은 저장되어 있습니다.',
+    );
+  }
 
-  if (error) {
-    throw new Error(error.message);
+  const client_submission_id = getOrCreateSubmissionId();
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => {
+    controller.abort('timeout');
+  }, SUBMIT_TIMEOUT_MS);
+
+  const onOffline = () => controller.abort('offline');
+  window.addEventListener('offline', onOffline);
+
+  try {
+    const { error } = await supabase
+      .from('applications')
+      .upsert([{ ...data, client_submission_id }], {
+        onConflict: 'client_submission_id',
+        ignoreDuplicates: true,
+      })
+      .abortSignal(controller.signal);
+
+    if (error) {
+      throw new SubmitError('unknown', error.message);
+    }
+
+    clearSubmissionId();
+  } catch (error) {
+    throw toSubmitError(error, controller.signal);
+  } finally {
+    window.clearTimeout(timeoutId);
+    window.removeEventListener('offline', onOffline);
   }
 }

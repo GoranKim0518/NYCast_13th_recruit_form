@@ -23,6 +23,7 @@ export function useFormAnalytics({
   position,
 }) {
   const engagedRef = useRef(false);
+  const submittedRef = useRef(false);
   const completedFieldsRef = useRef(new Set());
   const reachedSectionsRef = useRef(new Set());
   const lastFieldRef = useRef('');
@@ -72,6 +73,10 @@ export function useFormAnalytics({
   }, [position]);
 
   const sendAbandon = useCallback(() => {
+    if (!engagedRef.current || submittedRef.current) {
+      return;
+    }
+
     const values = getValues();
 
     trackFormAbandon({
@@ -83,24 +88,18 @@ export function useFormAnalytics({
   }, [getValues]);
 
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden' && engagedRef.current) {
-        sendAbandon();
+    const handlePageHide = (event) => {
+      if (event.persisted) {
+        return;
       }
+
+      sendAbandon();
     };
 
-    const handleBeforeUnload = () => {
-      if (engagedRef.current) {
-        sendAbandon();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handlePageHide);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handlePageHide);
     };
   }, [sendAbandon]);
 
@@ -141,10 +140,15 @@ export function useFormAnalytics({
     trackSubmitFailed(classifySubmitError(error));
   }, []);
 
+  const markFormSubmitted = useCallback(() => {
+    submittedRef.current = true;
+  }, []);
+
   return {
     setSectionRef,
     onFieldBlur,
     onSubmitAttempt,
     onSubmitFailed,
+    markFormSubmitted,
   };
 }

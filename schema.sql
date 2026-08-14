@@ -2,6 +2,8 @@
 CREATE TABLE public.applications (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  -- 네트워크 재시도 시 같은 지원서가 두 번 들어가지 않게 하는 멱등 키
+  client_submission_id UUID NOT NULL UNIQUE,
 
   -- 공통 필수
   name TEXT NOT NULL,
@@ -47,3 +49,9 @@ TO anon
 WITH CHECK (true);
 
 -- SELECT, UPDATE, DELETE 정책은 생성하지 않음 → anon/public 권한으로 조회·수정·삭제 불가
+
+-- 기존 테이블 마이그레이션 (이미 applications가 있으면 이것만 실행)
+-- ALTER TABLE public.applications
+--   ADD COLUMN IF NOT EXISTS client_submission_id UUID;
+-- CREATE UNIQUE INDEX IF NOT EXISTS applications_client_submission_id_uidx
+--   ON public.applications (client_submission_id);
