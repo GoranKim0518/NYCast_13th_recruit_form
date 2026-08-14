@@ -54,10 +54,13 @@ export default function TextInput({
         id={id}
         type={type}
         placeholder={placeholder}
-        className={inputClassName}
+        className={`${inputClassName} relative z-10`}
         aria-invalid={error ? 'true' : 'false'}
         aria-required={required ? 'true' : 'false'}
         {...rest}
+        onPointerDown={(event) => {
+          event.currentTarget.focus({ preventScroll: true });
+        }}
         onBlur={mergeBlurHandler(onBlur, onAnalyticsBlur)}
       />
     </FormField>
@@ -92,10 +95,13 @@ export function TextAreaInput({
         id={id}
         rows={rows}
         placeholder={placeholder}
-        className={`${inputClassName} min-h-[140px] resize-y`}
+        className={`${inputClassName} relative z-10 min-h-[140px] resize-y`}
         aria-invalid={error ? 'true' : 'false'}
         aria-required={required ? 'true' : 'false'}
         {...rest}
+        onPointerDown={(event) => {
+          event.currentTarget.focus({ preventScroll: true });
+        }}
         onBlur={mergeBlurHandler(onBlur, onAnalyticsBlur)}
       />
     </FormField>

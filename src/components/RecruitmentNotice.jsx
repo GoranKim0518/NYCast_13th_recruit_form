@@ -125,6 +125,7 @@ export default function RecruitmentNotice() {
         title={section2.title}
         closedHint="모집 대상, 일정, 혜택 자세히 보기"
         panelClassName="mt-6 space-y-6"
+        defaultOpen={false}
       >
         <div className="space-y-6">
           <div className="space-y-2">

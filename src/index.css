@@ -38,8 +38,7 @@ select {
   font-size: 16px;
 }
 
-summary {
-  list-style: none;
+button.touch-manipulation {
   -webkit-tap-highlight-color: transparent;
 }
 

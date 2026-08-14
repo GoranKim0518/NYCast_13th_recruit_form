@@ -318,12 +318,8 @@ export default function ApplicationForm({ onSuccess }) {
     }
 
     const shouldScroll = !skipAutoScrollRef.current;
-    commonDisclosureRef.current?.setOpen(
-      false,
-      shouldScroll ? 'position_selected' : undefined,
-    );
-
     if (shouldScroll) {
+      commonDisclosureRef.current?.setOpen(false, 'position_selected');
       scrollElementIntoView(nextStepRef.current);
     }
 

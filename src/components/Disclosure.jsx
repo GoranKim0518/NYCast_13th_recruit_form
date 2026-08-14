@@ -12,45 +12,27 @@ export default function Disclosure({
   closedAction = '펼치기',
   openAction = '접기',
   showTrigger = true,
+  defaultOpen = true,
   panelClassName,
   children,
 }) {
-  const detailsRef = useRef(null);
-  const panelRef = useRef(null);
-  const programmaticRef = useRef(false);
-  const isOpenRef = useRef(true);
-  const [isOpen, setIsOpen] = useState(true);
+  const isOpenRef = useRef(!showTrigger || defaultOpen);
+  const [isOpen, setIsOpen] = useState(() => !showTrigger || defaultOpen);
   const resolvedPanelClassName =
     panelClassName ?? (showTrigger ? 'mt-6 space-y-8' : 'space-y-8');
 
-  const setDetailsNode = (node) => {
-    detailsRef.current = node;
+  const setRootNode = (node) => {
     sectionRef?.(node);
   };
-
-  const syncInert = useCallback(
-    (nextOpen) => {
-      const panel = panelRef.current;
-      if (!panel) {
-        return;
-      }
-
-      panel.inert = Boolean(showTrigger && !nextOpen);
-    },
-    [showTrigger],
-  );
 
   const setOpen = useCallback(
     (nextOpen, trigger) => {
       if (isOpenRef.current === nextOpen) {
-        syncInert(nextOpen);
         return;
       }
 
-      programmaticRef.current = true;
       isOpenRef.current = nextOpen;
       setIsOpen(nextOpen);
-      syncInert(nextOpen);
 
       if (trigger) {
         trackFormDisclosure({
@@ -60,7 +42,7 @@ export default function Disclosure({
         });
       }
     },
-    [sectionName, syncInert],
+    [sectionName],
   );
 
   useImperativeHandle(ref, () => ({ setOpen }), [setOpen]);
@@ -71,56 +53,30 @@ export default function Disclosure({
     }
   }, [setOpen, showTrigger]);
 
-  useLayoutEffect(() => {
-    syncInert(isOpen);
-  }, [isOpen, syncInert]);
-
-  const handleToggle = (event) => {
-    const nextOpen = event.currentTarget.open;
-
-    if (programmaticRef.current) {
-      programmaticRef.current = false;
-      syncInert(nextOpen);
-      return;
-    }
-
-    if (!showTrigger) {
-      programmaticRef.current = true;
-      isOpenRef.current = true;
-      setIsOpen(true);
-      event.currentTarget.open = true;
-      syncInert(true);
-      return;
-    }
-
-    isOpenRef.current = nextOpen;
-    setIsOpen(nextOpen);
-    syncInert(nextOpen);
-    trackFormDisclosure({
-      sectionName,
-      disclosureAction: nextOpen ? 'open' : 'close',
-      disclosureTrigger: 'user',
-    });
+  const handleUserToggle = () => {
+    setOpen(!isOpenRef.current, 'user');
   };
 
+  const collapsed = showTrigger && !isOpen;
+
   return (
-    <details
-      ref={setDetailsNode}
-      className="group"
-      data-section={dataSection}
-      open={isOpen}
-      onToggle={handleToggle}
-    >
-      <AccordionSummary
-        title={title}
-        closedHint={closedHint}
-        closedAction={closedAction}
-        openAction={openAction}
-        hidden={!showTrigger}
-      />
-      <div ref={panelRef} className={resolvedPanelClassName}>
+    <div ref={setRootNode} data-section={dataSection} className="min-w-0">
+      {showTrigger && (
+        <AccordionSummary
+          title={title}
+          closedHint={closedHint}
+          closedAction={closedAction}
+          openAction={openAction}
+          isOpen={isOpen}
+          onClick={handleUserToggle}
+        />
+      )}
+      <div
+        className={collapsed ? 'hidden' : resolvedPanelClassName}
+        aria-hidden={collapsed || undefined}
+      >
         {children}
       </div>
-    </details>
+    </div>
   );
 }
