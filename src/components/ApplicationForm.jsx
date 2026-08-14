@@ -20,7 +20,6 @@ import {
   EMAIL_REGEX,
   PHONE_REGEX,
   POSITIONS,
-  URL_REGEX,
 } from '../utils/formConfig';
 import { scrollElementIntoView } from '../utils/scroll';
 import { RECRUITMENT_INFO } from '../constants/recruitmentInfo';
@@ -559,20 +558,11 @@ export default function ApplicationForm({ onSuccess }) {
             <TextInput
               id="des_portfolio_url"
               label="디자이너 포트폴리오 제출"
-              required
-              placeholder="https://portfolio.example.com"
+              placeholder="있으면 링크를 적어 주세요"
               error={errors.des_portfolio_url?.message}
               register={register}
               onAnalyticsBlur={fieldBlur(onFieldBlur, 'des_portfolio_url')}
-              registerOptions={{
-                ...requiredRule('포트폴리오 URL을 입력해 주세요.'),
-                pattern: {
-                  value: URL_REGEX,
-                  message:
-                    'http:// 또는 https:// 로 시작하는 URL을 입력해 주세요.',
-                },
-                validate: sanitizeRule,
-              }}
+              registerOptions={{ validate: sanitizeRule }}
             />
 
             <PositionClosingFields
@@ -596,7 +586,7 @@ export default function ApplicationForm({ onSuccess }) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="min-h-11 w-full rounded-lg bg-violet-600 px-6 py-3 text-base font-semibold text-white transition-colors touch-manipulation hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          className="min-h-11 w-full cursor-pointer rounded-lg bg-violet-600 px-6 py-3 text-base font-semibold text-white transition-colors touch-manipulation hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? '제출 중...' : '지원서 제출하기'}
         </button>

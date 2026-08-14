@@ -112,13 +112,16 @@ export async function submitApplication(data) {
   try {
     const { error } = await supabase
       .from('applications')
-      .upsert([{ ...data, client_submission_id }], {
-        onConflict: 'client_submission_id',
-        ignoreDuplicates: true,
-      })
+      .insert([{ ...data, client_submission_id }])
       .abortSignal(controller.signal);
 
     if (error) {
+      // 같은 탭에서 재시도: UNIQUE 충돌은 이미 저장된 것으로 본다.
+      if (error.code === '23505') {
+        clearSubmissionId();
+        return;
+      }
+
       throw new SubmitError('unknown', error.message);
     }
 

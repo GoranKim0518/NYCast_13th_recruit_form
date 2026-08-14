@@ -2,34 +2,10 @@ import { RECRUITMENT_INFO } from '../constants/recruitmentInfo';
 import Disclosure from './Disclosure';
 import FormHtml from './FormHtml';
 
-const TEXT_LINKS = [
-  {
-    label: '노원마을미디어지원센터',
-    href: 'https://nowonmedia.or.kr/',
-  },
-];
-
-const TEXT_LINK_PATTERN = new RegExp(
-  `(${TEXT_LINKS.map(({ label }) =>
-    label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
-  ).join('|')}|<b>[\\s\\S]*?<\\/b>)`,
-);
-
-const TEXT_LINK_HREF = Object.fromEntries(
-  TEXT_LINKS.map(({ label, href }) => [label, href]),
-);
+const TEXT_LINK_PATTERN = /(<b>[\s\S]*?<\/b>)/;
 
 function LinkedText({ text }) {
   return text.split(TEXT_LINK_PATTERN).map((part, index) => {
-    const href = TEXT_LINK_HREF[part];
-    if (href) {
-      return (
-        <ExternalLink key={`${part}-${index}`} href={href}>
-          {part}
-        </ExternalLink>
-      );
-    }
-
     const boldMatch = part.match(/^<b>([\s\S]*)<\/b>$/);
     if (boldMatch) {
       return (

@@ -42,6 +42,9 @@ CREATE TABLE public.applications (
 ALTER TABLE public.applications ENABLE ROW LEVEL SECURITY;
 
 -- 익명 사용자(anon)는 오직 INSERT만 허용 (조회, 수정, 삭제 불가능)
+GRANT USAGE ON SCHEMA public TO anon;
+GRANT INSERT ON TABLE public.applications TO anon;
+
 CREATE POLICY "Allow anonymous insert only"
 ON public.applications
 FOR INSERT

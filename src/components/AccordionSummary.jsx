@@ -9,7 +9,13 @@ export default function AccordionSummary({
   hidden = false,
 }) {
   return (
-    <summary className={`${SUMMARY_CLASS_NAME}${hidden ? ' hidden' : ''}`}>
+    <summary
+      className={
+        hidden
+          ? 'pointer-events-none sr-only'
+          : SUMMARY_CLASS_NAME
+      }
+    >
       <div className="flex min-h-12 items-center justify-between gap-3 px-4 py-3">
         <span className="min-w-0">
           <span className="block text-base font-bold text-gray-900 sm:text-lg">

@@ -54,7 +54,7 @@ export const COMMON_REQUIRED_FIELDS = [
 export const POSITION_REQUIRED_FIELDS = {
   PD: ['pd_idea', 'pd_inflow_channel'],
   홍보마케터: ['mkt_inflow_channel'],
-  디자이너: ['des_portfolio_url', 'des_inflow_channel'],
+  디자이너: ['des_inflow_channel'],
 };
 
 export function getFieldSection(fieldName) {

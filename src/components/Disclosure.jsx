@@ -1,4 +1,4 @@
-import { useCallback, useImperativeHandle, useLayoutEffect, useRef } from 'react';
+import { useCallback, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
 import { trackFormDisclosure } from '../lib/analytics';
 import AccordionSummary from './AccordionSummary';
 
@@ -18,6 +18,8 @@ export default function Disclosure({
   const detailsRef = useRef(null);
   const panelRef = useRef(null);
   const programmaticRef = useRef(false);
+  const isOpenRef = useRef(true);
+  const [isOpen, setIsOpen] = useState(true);
   const resolvedPanelClassName =
     panelClassName ?? (showTrigger ? 'mt-6 space-y-8' : 'space-y-8');
 
@@ -27,27 +29,27 @@ export default function Disclosure({
   };
 
   const syncInert = useCallback(
-    (isOpen) => {
+    (nextOpen) => {
       const panel = panelRef.current;
       if (!panel) {
         return;
       }
 
-      panel.inert = Boolean(showTrigger && !isOpen);
+      panel.inert = Boolean(showTrigger && !nextOpen);
     },
     [showTrigger],
   );
 
   const setOpen = useCallback(
     (nextOpen, trigger) => {
-      const details = detailsRef.current;
-      if (!details || details.open === nextOpen) {
+      if (isOpenRef.current === nextOpen) {
         syncInert(nextOpen);
         return;
       }
 
       programmaticRef.current = true;
-      details.open = nextOpen;
+      isOpenRef.current = nextOpen;
+      setIsOpen(nextOpen);
       syncInert(nextOpen);
 
       if (trigger) {
@@ -64,38 +66,39 @@ export default function Disclosure({
   useImperativeHandle(ref, () => ({ setOpen }), [setOpen]);
 
   useLayoutEffect(() => {
-    const details = detailsRef.current;
-    if (!details) {
-      return;
-    }
-
     if (!showTrigger) {
       setOpen(true);
-      return;
     }
+  }, [setOpen, showTrigger]);
 
-    syncInert(details.open);
-  }, [setOpen, showTrigger, syncInert]);
+  useLayoutEffect(() => {
+    syncInert(isOpen);
+  }, [isOpen, syncInert]);
 
   const handleToggle = (event) => {
-    const isOpen = event.currentTarget.open;
+    const nextOpen = event.currentTarget.open;
 
     if (programmaticRef.current) {
       programmaticRef.current = false;
-      syncInert(isOpen);
+      syncInert(nextOpen);
       return;
     }
 
     if (!showTrigger) {
+      programmaticRef.current = true;
+      isOpenRef.current = true;
+      setIsOpen(true);
       event.currentTarget.open = true;
       syncInert(true);
       return;
     }
 
-    syncInert(isOpen);
+    isOpenRef.current = nextOpen;
+    setIsOpen(nextOpen);
+    syncInert(nextOpen);
     trackFormDisclosure({
       sectionName,
-      disclosureAction: isOpen ? 'open' : 'close',
+      disclosureAction: nextOpen ? 'open' : 'close',
       disclosureTrigger: 'user',
     });
   };
@@ -105,6 +108,7 @@ export default function Disclosure({
       ref={setDetailsNode}
       className="group"
       data-section={dataSection}
+      open={isOpen}
       onToggle={handleToggle}
     >
       <AccordionSummary
