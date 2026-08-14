@@ -1,47 +1,105 @@
 # GA4 · GTM 연결 / 스프레드시트 연동
 
-이 폼은 **앱에서 GA4로 이벤트를 직접 보냅니다.** (`VITE_GA_MEASUREMENT_ID` + `react-ga4`)  
-GTM은 광고·픽셀용으로만 쓰고, **같은 측정 ID로 GA4 구성 태그를 다시 넣지 마세요.** 페이지뷰·전환이 두 번 잡힙니다.
+행동 분석(퍼널·이탈)과 전환 분석(`generate_lead`)은 **둘 다 동작해야** 합니다.
+
+```
+폼 이벤트
+  ├─ dataLayer.push  →  GTM 트리거·태그 (픽셀, 광고)
+  └─ react-ga4       →  GA4 보고서 (퍼널, 획득, 핵심 이벤트)
+```
+
+GA4는 `VITE_GA_MEASUREMENT_ID`가 있으면 코드가 직접 보냅니다. GTM은 같은 이벤트를 dataLayer에서 받아 태그를 켭니다. **GTM에 같은 G- 측정 ID로 Google 태그(구성 태그)를 다시 넣지 마세요.** 페이지뷰·전환이 두 번 잡힙니다.
 
 ---
 
 ## 1. GTM 연결
 
-이미 GA4 전환·퍼널은 코드가 담당합니다. GTM은 Meta Pixel, 카카오 픽셀, 추가 마케팅 태그가 필요할 때만 붙입니다.
+### 환경 변수
+
+| 변수 | 역할 |
+|------|------|
+| `VITE_GA_MEASUREMENT_ID` | GA4 행동·전환 분석 (필수) |
+| `VITE_GTM_CONTAINER_ID` | GTM 컨테이너 로드 (권장) |
+
+둘 다 `.env`와 Vercel Production/Preview에 넣고 **재배포**합니다. `scripts/sync-vercel-env.sh`가 두 키를 같이 올립니다.
 
 ### 컨테이너 만들기
 
 1. [Google Tag Manager](https://tagmanager.google.com/) → 계정 → 컨테이너 만들기
 2. 대상: **웹**
-3. 컨테이너 ID (`GTM-XXXXXXX`)를 복사합니다
+3. 컨테이너 ID (`GTM-XXXXXXX`)를 `VITE_GTM_CONTAINER_ID`에 넣습니다
 
-### 사이트에 스니펫 넣기
+앱이 `gtm.js`와 noscript iframe을 주입합니다. `index.html`에 스니펫을 손으로 또 붙이지 마세요.
 
-지금은 GTM 스니펫이 코드에 없습니다. 넣으려면 `index.html`의 `<head>` 안과 `<body>` 바로 아래에 GTM이 안내하는 두 조각을 그대로 붙입니다.
+프로덕션 URL 기준으로 미리보기·제출합니다.
 
-- `<head>`: `gtm.js` 스크립트
-- `<body>` 직후: `noscript` iframe
+### 변수 (GTM)
 
-Vercel에 올린 **프로덕션 URL** 기준으로 미리보기·제출합니다.
+**내장 변수**에서 켭니다: Event, Page URL, Page Path, Page Hostname.
 
-### GTM에서 하지 말 것
+**데이터 영역 변수** (데이터 영역 버전 2). 이름은 코드 매개변수와 같게 둡니다.
 
-- GA4 구성 태그 (`G-` 측정 ID) 추가 — 앱이 이미 보냄
+| 변수 이름 | 데이터 영역 변수 이름 |
+|-----------|----------------------|
+| DLV - campaign_source | `campaign_source` |
+| DLV - campaign_medium | `campaign_medium` |
+| DLV - campaign_name | `campaign_name` |
+| DLV - campaign_content | `campaign_content` |
+| DLV - position_selected | `position_selected` |
+| DLV - section_name | `section_name` |
+| DLV - field_name | `field_name` |
+| DLV - error_type | `error_type` |
+| DLV - last_section | `last_section` |
+| DLV - last_field | `last_field` |
+| DLV - fields_completed_count | `fields_completed_count` |
+| DLV - lead_source | `lead_source` |
+| DLV - form_session_id | `form_session_id` |
+| DLV - form_name | `form_name` |
+
+### 트리거 (맞춤 이벤트)
+
+트리거 유형: **맞춤 이벤트**. 이벤트 이름은 dataLayer의 `event` 값입니다.
+
+| 트리거 이름 | 이벤트 이름 | 용도 |
+|-------------|-------------|------|
+| CE - page_view | `page_view` | 진입 |
+| CE - form_view | `form_view` | 퍼널 시작 |
+| CE - form_start | `form_start` | 첫 유효 입력 |
+| CE - position_selected | `position_selected` | 직군 선택 |
+| CE - submit_attempt | `submit_attempt` | 제출 시도 |
+| CE - generate_lead | `generate_lead` | **전환** |
+| CE - form_submitted | `form_submitted` | 전환(커스텀) |
+| CE - form_abandon | `form_abandon` | 이탈 |
+
+미리보기에서 `dataLayer` 탭에 위 이름이 보여야 연결입니다.
+
+### 태그
+
+**하지 말 것**
+
+- Google 태그 / GA4 구성 태그 (`G-` 측정 ID) — 앱이 이미 보냄
 - GA4 이벤트 태그로 `form_submitted` / `generate_lead` 재전송
 
-### GTM에서 해도 되는 것
+**해도 되는 것** (전환 픽셀 예시)
 
-- Meta/카카오 픽셀
-- 전환 픽셀 (GA4와 다른 도구)
-- 동의 배너 이후 픽셀만 켜기
+| 태그 | 유형 | 트리거 |
+|------|------|--------|
+| Meta Pixel - PageView | 맞춤 HTML / 픽셀 | All Pages 또는 CE - page_view |
+| Meta Pixel - Lead | 맞춤 HTML / 픽셀 | CE - generate_lead |
+| 카카오 픽셀 | 맞춤 HTML | CE - generate_lead |
 
-제출 후 미리보기에서 태그가 한 번씩만 나가는지 확인합니다.
+제출 후 미리보기에서 각 태그가 **한 번씩만** 나가는지 확인합니다.
 
 ---
 
 ## 2. GA4 연결
 
-코드 연결은 `.env` / Vercel 환경 변수 `VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX` 한 줄입니다. 값이 없으면 이벤트는 나가지 않습니다. 변경 후 **재배포**해야 합니다.
+코드 연결은 `.env` / Vercel 환경 변수입니다.
+
+- `VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX` — 없으면 GA4로 이벤트가 안 갑니다 (행동·전환 분석 불가)
+- `VITE_GTM_CONTAINER_ID=GTM-XXXXXXX` — 없으면 GTM 태그는 안 뜨지만, dataLayer에는 이벤트가 쌓입니다
+
+변경 후 **재배포**해야 합니다.
 
 ### 속성·스트림
 

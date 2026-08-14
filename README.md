@@ -44,6 +44,7 @@ cp .env.example .env
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key-here
 VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX
+VITE_GTM_CONTAINER_ID=GTM-XXXXXXX
 ```
 
 ### 3. Supabase 스키마 적용
@@ -78,13 +79,14 @@ npx vercel@latest deploy --prod
 
 #### Vercel 환경 변수 설정 (필수)
 
-Vercel Dashboard → Project → Settings → Environment Variables에 아래 3개를 **Production / Preview / Development** 모두 추가:
+Vercel Dashboard → Project → Settings → Environment Variables에 아래 4개를 **Production / Preview / Development** 모두 추가:
 
 | Key | Value |
 |-----|-------|
 | `VITE_SUPABASE_URL` | Supabase Project URL |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon public key |
 | `VITE_GA_MEASUREMENT_ID` | GA4 측정 ID (G-XXXXXXXXXX) |
+| `VITE_GTM_CONTAINER_ID` | GTM 컨테이너 ID (GTM-XXXXXXX) |
 
 환경 변수 추가 후 **Redeploy**해야 빌드에 반영됩니다.
 
@@ -126,7 +128,7 @@ GA4 Admin → 데이터 스트림 → 웹 URL에 아래 주소를 입력하세�
 https://nycast-13th-recruit-form.vercel.app
 ```
 
-측정 ID(`G-XXXXXXXXXX`)를 `.env`의 `VITE_GA_MEASUREMENT_ID`에 넣은 뒤 `sync-vercel-env.sh` → `npm run deploy` 순서로 재배포해야 Production에 반영됩니다.
+측정 ID(`G-XXXXXXXXXX`)와 GTM ID(`GTM-XXXXXXX`)를 `.env`에 넣은 뒤 `sync-vercel-env.sh` → `npm run deploy` 순서로 재배포해야 Production에 반영됩니다.
 
 ### Vercel 환경 변수 (필수)
 
@@ -135,6 +137,7 @@ https://nycast-13th-recruit-form.vercel.app
 | `VITE_SUPABASE_URL` | Supabase Project URL |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon public key |
 | `VITE_GA_MEASUREMENT_ID` | GA4 측정 ID |
+| `VITE_GTM_CONTAINER_ID` | GTM 컨테이너 ID |
 
 Vite는 **빌드 시점**에 `VITE_` 변수를 번들에 포함하므로, 환경 변수 변경 후 반드시 재배포하세요.
 

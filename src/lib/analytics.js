@@ -4,11 +4,13 @@ import {
   getAnalyticsSessionId,
   getCampaignEventParams,
 } from './campaign';
+import { getDataLayer, initGtm, pushDataLayer } from './gtm';
 
 const MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
 const FORM_NAME = 'nycast_13th_recruit';
 
 let initialized = false;
+let ga4Ready = false;
 let viewedAt = 0;
 
 function engagementTimeMsec() {
@@ -25,51 +27,73 @@ function baseParams() {
 }
 
 function sendEvent(name, params = {}, { beacon = false } = {}) {
-  if (!initialized) {
-    return;
-  }
-
   const payload = {
     ...baseParams(),
     ...params,
   };
 
-  if (beacon) {
-    payload.transport_type = 'beacon';
+  pushDataLayer(name, payload);
+
+  if (!ga4Ready) {
+    return;
   }
 
-  ReactGA.event(name, payload);
+  const gaPayload = beacon
+    ? { ...payload, transport_type: 'beacon' }
+    : payload;
+
+  ReactGA.event(name, gaPayload);
 }
 
 export function initAnalytics() {
-  if (initialized || !MEASUREMENT_ID) {
+  if (initialized) {
     return;
   }
 
   captureCampaignContext();
   getAnalyticsSessionId();
+  getDataLayer();
+  initGtm();
 
-  ReactGA.initialize(MEASUREMENT_ID, {
-    gaOptions: {
-      anonymize_ip: true,
-    },
-    gtagOptions: {
-      anonymize_ip: true,
-      allow_google_signals: false,
-      allow_ad_personalization_signals: false,
-      send_page_view: false,
-      debug_mode: Boolean(import.meta.env.DEV),
-    },
-  });
-
-  initialized = true;
   viewedAt = Date.now();
+  initialized = true;
 
-  ReactGA.send({
-    hitType: 'pageview',
-    page: `${window.location.pathname}${window.location.search}`,
-    title: document.title,
-  });
+  const measurementId =
+    typeof MEASUREMENT_ID === 'string' ? MEASUREMENT_ID.trim() : '';
+
+  if (measurementId) {
+    ReactGA.initialize(measurementId, {
+      gaOptions: {
+        anonymize_ip: true,
+      },
+      gtagOptions: {
+        anonymize_ip: true,
+        allow_google_signals: false,
+        allow_ad_personalization_signals: false,
+        send_page_view: false,
+        debug_mode: Boolean(import.meta.env.DEV),
+      },
+    });
+    ga4Ready = true;
+  }
+
+  const pagePath = `${window.location.pathname}${window.location.search}`;
+  const pageParams = {
+    ...baseParams(),
+    page_path: pagePath,
+    page_location: window.location.href,
+    page_title: document.title,
+  };
+
+  pushDataLayer('page_view', pageParams);
+
+  if (ga4Ready) {
+    ReactGA.send({
+      hitType: 'pageview',
+      page: pagePath,
+      title: document.title,
+    });
+  }
 }
 
 export function trackFormView() {
@@ -100,7 +124,11 @@ export function trackFieldError(fieldName, errorType) {
 }
 
 export function trackPositionSelected(position) {
-  if (initialized && position) {
+  if (position) {
+    getDataLayer().push({ selected_position: position });
+  }
+
+  if (ga4Ready && position) {
     ReactGA.gtag('set', 'user_properties', {
       selected_position: position,
     });
