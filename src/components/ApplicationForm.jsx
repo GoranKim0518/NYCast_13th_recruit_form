@@ -21,8 +21,8 @@ import {
   URL_REGEX,
 } from '../utils/formConfig';
 import FormLayout from './FormLayout';
-import InfoBox from './InfoBox';
 import RadioGroup from './RadioGroup';
+import RecruitmentNotice from './RecruitmentNotice';
 import TextInput, { TextAreaInput } from './TextInput';
 
 function requiredRule(message) {
@@ -135,42 +135,7 @@ export default function ApplicationForm({ onSuccess }) {
 
   return (
     <FormLayout>
-      <header className="mb-10 space-y-4 text-center">
-        <h1 className="text-2xl font-bold leading-tight text-gray-900 sm:text-3xl">
-          노원유쓰캐스트 13기 신입 국원 모집 지원서
-        </h1>
-        <p className="text-base font-semibold text-gray-800">
-          노원유쓰캐스트: 노원의 이야기를 기록하다
-        </p>
-        <p className="text-base leading-relaxed text-gray-600">
-          노원유쓰캐스트 13기 신입 국원을 모집합니다. 아래 지원서를 작성해
-          주세요.
-        </p>
-      </header>
-
-      <section className="mb-10 space-y-4">
-        <p className="text-base text-gray-800">
-          <span aria-hidden="true">📍</span>{' '}
-          <strong>노원유쓰캐스트 13기 신입 국원 모집</strong>
-        </p>
-        <InfoBox>
-          <ul className="list-disc space-y-2 pl-5 text-base text-gray-700">
-            <li>
-              <strong>모집 기간:</strong> 공지에 따름
-            </li>
-            <li>
-              <strong>지원 자격:</strong> 노원구 및 인근 지역 청년
-            </li>
-            <li>
-              <strong>지원 분야:</strong> PD, 홍보마케터, 디자이너
-            </li>
-          </ul>
-        </InfoBox>
-        <p className="text-sm text-gray-500">
-          ※ 표시(<span className="text-red-500">*</span>)가 있는 항목은
-          필수입니다. 작성 중인 내용은 이 기기에 자동 저장됩니다.
-        </p>
-      </section>
+      <RecruitmentNotice />
 
       {isRestored && (
         <div className="mb-8">

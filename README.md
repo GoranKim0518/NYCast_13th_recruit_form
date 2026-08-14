@@ -55,7 +55,43 @@ Supabase Dashboard → SQL Editor에서 `schema.sql` 내용을 실행합니다.
 npm run dev
 ```
 
-### 5. 프로덕션 빌드
+브라우저에서 http://localhost:5173/ 접속
+
+### 5. Vercel 배포
+
+> **중요:** Vercel CLI 47.2.2 이상 필요. 구버전(45.x) 사용 시 `icn1::...` 내부 오류 발생.
+
+```bash
+# 최신 CLI로 배포 (권장)
+npm run deploy
+
+# 또는
+npx vercel@latest deploy --prod
+```
+
+**Production URL:** https://nycast-13th-recruit-form.vercel.app
+
+#### Vercel 환경 변수 설정 (필수)
+
+Vercel Dashboard → Project → Settings → Environment Variables에 아래 3개를 **Production / Preview / Development** 모두 추가:
+
+| Key | Value |
+|-----|-------|
+| `VITE_SUPABASE_URL` | Supabase Project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon public key |
+| `VITE_GA_MEASUREMENT_ID` | GA4 측정 ID (G-XXXXXXXXXX) |
+
+환경 변수 추가 후 **Redeploy**해야 빌드에 반영됩니다.
+
+#### GA4 스트림 설정
+
+GA4 Admin → Data Streams → Web stream URL을 Vercel Production URL로 설정:
+
+```
+https://nycast-13th-recruit-form.vercel.app
+```
+
+### 6. 프로덕션 빌드
 
 ```bash
 npm run build
