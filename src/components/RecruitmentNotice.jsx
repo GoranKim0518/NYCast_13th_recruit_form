@@ -58,7 +58,7 @@ function ExternalLink({ href, children, className = '' }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={`text-blue-600 underline underline-offset-2 transition-colors hover:text-blue-800 ${className}`}
+      className={`break-words text-violet-600 underline underline-offset-2 transition-colors hover:text-violet-800 ${className}`}
     >
       {children}
     </a>
@@ -95,7 +95,7 @@ export default function RecruitmentNotice() {
             alt={banner.alt}
             width={banner.width}
             height={banner.height}
-            className="block h-auto w-full"
+            className="block h-auto w-full max-w-full"
           />
         </div>
 
@@ -181,7 +181,7 @@ export default function RecruitmentNotice() {
               {schedule.timeline.map(({ label, note, value, highlight }) => (
                 <div
                   key={label}
-                  className={`flex flex-col gap-0.5 rounded-lg px-3 py-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4 ${
+                  className={`flex flex-col gap-0.5 rounded-xl px-3 py-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4 ${
                     highlight
                       ? 'bg-violet-50 font-semibold text-violet-800'
                       : 'text-gray-700'
@@ -228,7 +228,7 @@ export default function RecruitmentNotice() {
         <img
           src={posterSrc}
           alt={posterAlt}
-          className="block h-auto w-full"
+          className="block h-auto w-full max-w-full"
         />
       </div>
 

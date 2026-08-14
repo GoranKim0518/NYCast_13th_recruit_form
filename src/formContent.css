@@ -11,6 +11,8 @@
   border: 1px solid #e5e7eb;
   border-radius: 0.75rem;
   padding: 0.75rem 1rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .form-hint {
@@ -25,14 +27,14 @@
 
 .form-html a,
 .form-hint a {
-  color: #2563eb;
+  color: #7c3aed;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 .form-html a:hover,
 .form-hint a:hover {
-  color: #1e40af;
+  color: #5b21b6;
 }
 
 .form-html b,

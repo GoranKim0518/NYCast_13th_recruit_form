@@ -1,7 +1,7 @@
 export const POSITIONS = ['PD', '홍보마케터', '디자이너'];
 
 export const PHONE_REGEX = /^010-\d{4}-\d{4}$/;
-export const EMAIL_REGEX = /^[^@\s]+@[^@\s]+$/;
+export const EMAIL_REGEX = /@/;
 export const URL_REGEX = /^https?:\/\/.+/i;
 
 export const defaultValues = {
