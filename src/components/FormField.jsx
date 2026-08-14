@@ -27,8 +27,8 @@ export default function FormField({
         )}
       </label>
       <FormHtml html={html} id={guidanceId} />
-      {children}
       <FormHtml html={hint} className="form-hint" id={hintId} />
+      {children}
       <p
         id={errorId}
         className="min-h-5 text-sm text-red-600"

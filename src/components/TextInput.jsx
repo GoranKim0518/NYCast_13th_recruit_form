@@ -2,24 +2,10 @@ import { memo } from 'react';
 import { useFormContext, useFormState } from 'react-hook-form';
 import FormField from './FormField';
 import { getFieldHint, getFieldHtml } from '../constants/formHints';
+import { commitPreviousInput } from '../utils/commitPreviousInput';
 
 const inputClassName =
   'relative z-10 w-full touch-manipulation rounded-lg border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-400 transition-colors focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20';
-
-function commitPreviousInput(event) {
-  const next = event.currentTarget;
-  const prev = document.activeElement;
-
-  if (
-    !(prev instanceof HTMLElement) ||
-    prev === next ||
-    (prev.tagName !== 'INPUT' && prev.tagName !== 'TEXTAREA')
-  ) {
-    return;
-  }
-
-  prev.blur();
-}
 
 function FieldControl({
   id,
