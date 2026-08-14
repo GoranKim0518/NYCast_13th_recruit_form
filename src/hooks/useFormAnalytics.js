@@ -13,13 +13,10 @@ import {
   classifySubmitError,
   countCompletedRequiredFields,
   getFieldSection,
-  mapValidationErrorType,
 } from '../utils/formAnalyticsConfig';
 
 export function useFormAnalytics({
-  trigger,
   getValues,
-  getFieldState,
   position,
 }) {
   const engagedRef = useRef(false);
@@ -104,32 +101,30 @@ export function useFormAnalytics({
   }, [sendAbandon]);
 
   const onFieldBlur = useCallback(
-    async (fieldName) => {
+    (fieldName) => {
       const sectionName = getFieldSection(fieldName);
       lastFieldRef.current = fieldName;
       lastSectionRef.current = sectionName;
 
-      const isValid = await trigger(fieldName);
-      const fieldState = getFieldState(fieldName);
+      const value = getValues(fieldName);
+      const filled = typeof value === 'string' && value.trim().length > 0;
 
-      if (isValid && !fieldState.invalid) {
-        if (!completedFieldsRef.current.has(fieldName)) {
-          completedFieldsRef.current.add(fieldName);
-          trackFieldCompleted(fieldName, sectionName);
-        }
-
-        if (!engagedRef.current) {
-          engagedRef.current = true;
-          trackFormEngaged();
-        }
+      if (!filled) {
+        trackFieldError(fieldName, 'required');
         return;
       }
 
-      if (fieldState.error) {
-        trackFieldError(fieldName, mapValidationErrorType(fieldState.error));
+      if (!completedFieldsRef.current.has(fieldName)) {
+        completedFieldsRef.current.add(fieldName);
+        trackFieldCompleted(fieldName, sectionName);
+      }
+
+      if (!engagedRef.current) {
+        engagedRef.current = true;
+        trackFormEngaged();
       }
     },
-    [trigger, getFieldState],
+    [getValues],
   );
 
   const onSubmitAttempt = useCallback(() => {

@@ -1,86 +1,70 @@
+import { memo } from 'react';
+import { useFormContext, useFormState } from 'react-hook-form';
 import FormField from './FormField';
 import { getFieldHint, getFieldHtml } from '../constants/formHints';
 
 const inputClassName =
-  'w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-400 transition-colors focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20';
+  'relative z-10 w-full touch-manipulation rounded-lg border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-400 transition-colors focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20';
 
-function mergeBlurHandler(registerBlur, onAnalyticsBlur) {
-  if (!onAnalyticsBlur) {
-    return registerBlur;
+function commitPreviousInput(event) {
+  const next = event.currentTarget;
+  const prev = document.activeElement;
+
+  if (
+    !(prev instanceof HTMLElement) ||
+    prev === next ||
+    (prev.tagName !== 'INPUT' && prev.tagName !== 'TEXTAREA')
+  ) {
+    return;
   }
 
-  return async (event) => {
-    await registerBlur(event);
-    onAnalyticsBlur();
-  };
+  prev.blur();
 }
 
-export default function TextInput({
+function FieldControl({
   id,
+  rules,
   label,
   required,
   hint,
   html,
-  error,
-  type = 'text',
   placeholder,
   maxLength,
-  register,
-  registerOptions,
-  onAnalyticsBlur,
-}) {
-  const { onBlur, ...rest } = register(id, {
-    ...registerOptions,
-    ...(maxLength
-      ? {
-          maxLength: {
-            value: maxLength,
-            message: `${maxLength}자 이하로 입력해 주세요.`,
-          },
-        }
-      : {}),
-  });
-
-  return (
-    <FormField
-      label={label}
-      required={required}
-      html={getFieldHtml(id, html)}
-      hint={getFieldHint(id, hint)}
-      error={error}
-      htmlFor={id}
-    >
-      <input
-        id={id}
-        type={type}
-        placeholder={placeholder}
-        className={`${inputClassName} relative z-10`}
-        aria-invalid={error ? 'true' : 'false'}
-        aria-required={required ? 'true' : 'false'}
-        {...rest}
-        onPointerDown={(event) => {
-          event.currentTarget.focus({ preventScroll: true });
-        }}
-        onBlur={mergeBlurHandler(onBlur, onAnalyticsBlur)}
-      />
-    </FormField>
-  );
-}
-
-export function TextAreaInput({
-  id,
-  label,
-  required,
-  hint,
-  html,
-  error,
-  placeholder,
+  onFieldBlur,
+  multiline = false,
   rows = 5,
-  register,
-  registerOptions,
-  onAnalyticsBlur,
 }) {
-  const { onBlur, ...rest } = register(id, registerOptions);
+  const { register, control } = useFormContext();
+  const { errors } = useFormState({ control, name: id, exact: true });
+  const { ref, onChange, onBlur, name } = register(id, rules);
+  const describedBy = [
+    html ? `${id}-guidance` : null,
+    hint || getFieldHint(id) ? `${id}-hint` : null,
+    `${id}-error`,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const sharedProps = {
+    id,
+    name,
+    ref,
+    placeholder,
+    maxLength,
+    autoComplete: 'off',
+    className: multiline
+      ? `${inputClassName} min-h-[140px] resize-y`
+      : inputClassName,
+    'aria-invalid': errors[id] ? 'true' : 'false',
+    'aria-required': required ? 'true' : 'false',
+    'aria-describedby': describedBy,
+    onPointerDown: commitPreviousInput,
+    onChange,
+    onBlur: (event) => {
+      onBlur(event);
+      onFieldBlur?.(id);
+    },
+  };
 
   return (
     <FormField
@@ -88,22 +72,22 @@ export function TextAreaInput({
       required={required}
       html={getFieldHtml(id, html)}
       hint={getFieldHint(id, hint)}
-      error={error}
+      error={errors[id]?.message}
       htmlFor={id}
     >
-      <textarea
-        id={id}
-        rows={rows}
-        placeholder={placeholder}
-        className={`${inputClassName} relative z-10 min-h-[140px] resize-y`}
-        aria-invalid={error ? 'true' : 'false'}
-        aria-required={required ? 'true' : 'false'}
-        {...rest}
-        onPointerDown={(event) => {
-          event.currentTarget.focus({ preventScroll: true });
-        }}
-        onBlur={mergeBlurHandler(onBlur, onAnalyticsBlur)}
-      />
+      {multiline ? (
+        <textarea rows={rows} {...sharedProps} />
+      ) : (
+        <input type="text" {...sharedProps} />
+      )}
     </FormField>
   );
 }
+
+const TextInput = memo(FieldControl);
+
+export default TextInput;
+
+export const TextAreaInput = memo(function TextAreaInput(props) {
+  return <FieldControl {...props} multiline />;
+});

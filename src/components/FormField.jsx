@@ -1,4 +1,3 @@
-import { Children, cloneElement, isValidElement } from 'react';
 import FormHtml from './FormHtml';
 
 export default function FormField({
@@ -12,8 +11,7 @@ export default function FormField({
 }) {
   const guidanceId = htmlFor && html ? `${htmlFor}-guidance` : undefined;
   const hintId = htmlFor && hint ? `${htmlFor}-hint` : undefined;
-  const errorId = htmlFor && error ? `${htmlFor}-error` : undefined;
-  const describedBy = [guidanceId, hintId, errorId].filter(Boolean).join(' ');
+  const errorId = htmlFor ? `${htmlFor}-error` : undefined;
 
   return (
     <div className="space-y-2">
@@ -29,23 +27,15 @@ export default function FormField({
         )}
       </label>
       <FormHtml html={html} id={guidanceId} />
+      {children}
       <FormHtml html={hint} className="form-hint" id={hintId} />
-      {Children.map(children, (child) => {
-        if (!isValidElement(child) || !describedBy) {
-          return child;
-        }
-
-        return cloneElement(child, {
-          'aria-describedby': [child.props['aria-describedby'], describedBy]
-            .filter(Boolean)
-            .join(' '),
-        });
-      })}
-      {error && (
-        <p id={errorId} className="text-sm text-red-600" role="alert">
-          {error}
-        </p>
-      )}
+      <p
+        id={errorId}
+        className="min-h-5 text-sm text-red-600"
+        role={error ? 'alert' : undefined}
+      >
+        {error || '\u00a0'}
+      </p>
     </div>
   );
 }
