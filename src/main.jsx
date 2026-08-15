@@ -4,7 +4,7 @@ import { initAnalytics } from './lib/analytics';
 import App from './App.jsx';
 import './index.css';
 
-const GOAN_MARK = `
+const GORAN_MARK = `
    ▄▄     ▄▄▄   ▄▄▄      ▄   ▄▄▄▄
    ██▄   ██▀   █▀██  ██  ▀██████▀             █▄
    ███▄  ██      ██  ██    ██                ▄██▄
@@ -28,7 +28,7 @@ Made by Goran
 `.replace(/^\n/, '');
 
 console.log(
-  `%c${GOAN_MARK}`,
+  `%c${GORAN_MARK}`,
   [
     'font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
     'font-size: 11px',
