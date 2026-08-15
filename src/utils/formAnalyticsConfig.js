@@ -7,8 +7,8 @@ export const FIELD_SECTIONS = {
     'activity_location',
     'phone',
     'email',
-    'position',
     'inspiration_source',
+    'position',
   ],
   pd: [
     'pd_strategy',
@@ -47,8 +47,8 @@ export const COMMON_REQUIRED_FIELDS = [
   'activity_location',
   'phone',
   'email',
-  'position',
   'inspiration_source',
+  'position',
 ];
 
 export const POSITION_REQUIRED_FIELDS = {

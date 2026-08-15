@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { useFormAnalytics } from '../hooks/useFormAnalytics';
 import { useFormCache } from '../hooks/useFormCache';
 import { sanitizeFormData } from '../lib/sanitize';
-import { getInitialFormValues } from '../lib/formCache';
+import { getInitialFormValues, loadFormCache, saveMountedFormCache } from '../lib/formCache';
 import { submitApplication } from '../lib/supabase';
 import {
   trackDraftCleared,
@@ -192,7 +192,10 @@ function PositionClosingFields({ prefix, defaults, errors }) {
 
 export default function ApplicationForm({ onSuccess }) {
   const defaultsRef = useRef(getInitialFormValues());
-  const defaults = defaultsRef.current;
+  const defaults = {
+    ...defaultsRef.current,
+    ...(loadFormCache() || {}),
+  };
   const formRef = useRef(null);
   const commonDisclosureRef = useRef(null);
   const nextStepRef = useRef(null);
@@ -255,6 +258,7 @@ export default function ApplicationForm({ onSuccess }) {
 
   const handlePositionChange = useCallback(
     (event) => {
+      saveMountedFormCache(formRef.current);
       const nextPosition = event.target.value;
       setPosition(nextPosition);
       trackPositionSelected(nextPosition);
@@ -275,17 +279,29 @@ export default function ApplicationForm({ onSuccess }) {
       setRootError('');
 
       const firstErrorField = getFirstErrorField(formErrors, position);
+      const form = event.currentTarget;
+
       if (firstErrorField && isCollapsedCommonField(firstErrorField)) {
         commonDisclosureRef.current?.setOpen(true, 'validation_error');
       }
 
       if (firstErrorField) {
-        const field = event.currentTarget.elements.namedItem(firstErrorField);
-        const element =
-          field instanceof RadioNodeList ? field[0] : field;
-        if (element instanceof HTMLElement) {
-          element.focus();
-          scrollElementIntoView(element, { block: 'center' });
+        const reveal = () => {
+          const field = form.elements.namedItem(firstErrorField);
+          const element =
+            field instanceof RadioNodeList ? field[0] : field;
+          if (element instanceof HTMLElement) {
+            element.focus();
+            scrollElementIntoView(element, { block: 'center' });
+          }
+        };
+
+        if (isCollapsedCommonField(firstErrorField)) {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(reveal);
+          });
+        } else {
+          reveal();
         }
       }
       return;

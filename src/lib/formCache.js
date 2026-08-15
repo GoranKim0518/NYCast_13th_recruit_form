@@ -73,7 +73,12 @@ export function saveFormCache(data) {
   }
 
   try {
-    if (!hasMeaningfulDraft(data)) {
+    const merged = mergeCachedValues({
+      ...(loadFormCache() || {}),
+      ...data,
+    });
+
+    if (!hasMeaningfulDraft(merged)) {
       clearFormCache();
       return;
     }
@@ -83,7 +88,7 @@ export function saveFormCache(data) {
       JSON.stringify({
         version: CACHE_VERSION,
         savedAt: Date.now(),
-        data: mergeCachedValues(data),
+        data: merged,
       }),
     );
   } catch {
@@ -105,4 +110,29 @@ export function clearFormCache() {
 
 export function getInitialFormValues() {
   return loadFormCache() ?? { ...defaultValues };
+}
+
+export function readMountedFormData(form) {
+  const data = {};
+
+  if (!form) {
+    return data;
+  }
+
+  const formData = new FormData(form);
+
+  for (const key of Object.keys(defaultValues)) {
+    if (!form.elements.namedItem(key)) {
+      continue;
+    }
+
+    const value = formData.get(key);
+    data[key] = typeof value === 'string' ? value : '';
+  }
+
+  return data;
+}
+
+export function saveMountedFormCache(form) {
+  saveFormCache(readMountedFormData(form));
 }

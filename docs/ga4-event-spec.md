@@ -87,7 +87,7 @@
 
 | 값 | 의미 |
 |----|------|
-| `common` | 공통 정보 |
+| `common` | 기본 정보 |
 | `pd` | PD 문항 |
 | `marketer` | 홍보마케터 문항 |
 | `designer` | 디자이너 문항 |
@@ -95,10 +95,12 @@
 
 **`field_name`**
 
-공통: `name`, `birth_date`, `academic_info`, `residence`, `activity_location`, `phone`, `email`, `position`, `inspiration_source`  
+기본 정보: `name`, `birth_date`, `academic_info`, `residence`, `activity_location`, `phone`, `email`, `inspiration_source`, `position`  
 PD: `pd_strategy`, `pd_idea`, `pd_tools`, `pd_experience`, `pd_comment`, `pd_inflow_channel`  
 마케터: `mkt_strategy`, `mkt_tools`, `mkt_experience`, `mkt_comment`, `mkt_inflow_channel`  
 디자이너: `des_challenge`, `des_portfolio_url`, `des_comment`, `des_inflow_channel`
+
+칸 구분은 `field_name` / `last_field`입니다. `section_name`은 기본 정보(`common`) 또는 직군 덩어리입니다.
 
 **`error_type` (필드)**
 

@@ -4,9 +4,8 @@ import {
   clearFormCache,
   hasMeaningfulDraft,
   loadFormCache,
-  saveFormCache,
+  saveMountedFormCache,
 } from '../lib/formCache';
-import { readFormData } from '../utils/formConfig';
 
 export function useFormCache(formRef) {
   const [isRestored, setIsRestored] = useState(false);
@@ -28,7 +27,7 @@ export function useFormCache(formRef) {
     const persist = () => {
       clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
-        saveFormCache(readFormData(form));
+        saveMountedFormCache(form);
       }, SAVE_DEBOUNCE_MS);
     };
 
