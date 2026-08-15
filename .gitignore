@@ -13,6 +13,7 @@ lerna-debug.log*
 node_modules/
 dist/
 dist-ssr/
+dist-gtm-check/
 *.local
 
 # Internal ops docs (UTM, GA4/GTM spec, sheet sync) — not for the public repo
