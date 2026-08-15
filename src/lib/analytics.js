@@ -128,6 +128,24 @@ export function trackFieldError(fieldName, errorType) {
   });
 }
 
+export function trackInputLeave({
+  fieldName,
+  sectionName,
+  fieldFilled,
+  fieldValid,
+  errorType,
+  positionSelected,
+}) {
+  sendEvent('input_leave', {
+    field_name: fieldName,
+    section_name: sectionName,
+    field_filled: fieldFilled ? 'true' : 'false',
+    field_valid: fieldValid ? 'true' : 'false',
+    error_type: errorType || '(not set)',
+    position_selected: positionSelected || '(not set)',
+  });
+}
+
 export function trackPositionSelected(position) {
   if (!ANALYTICS_ENABLED) {
     return;

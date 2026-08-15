@@ -2,6 +2,9 @@
 
 이벤트 전체 목록과 GTM 트리거·변수 명세는 [`ga4-event-spec.md`](./ga4-event-spec.md)를 따릅니다.
 
+컨테이너 JSON: [`gtm/nycast-13th-recruit-container.json`](./gtm/nycast-13th-recruit-container.json)  
+GTM → 관리 → 컨테이너 가져오기 → **병합**. Google 태그(`G-`)는 넣지 않습니다.
+
 행동 분석(퍼널·이탈)과 전환 분석(`generate_lead`)은 **둘 다 동작해야** 합니다.
 
 ```
@@ -50,6 +53,8 @@ GA4는 `VITE_GA_MEASUREMENT_ID`가 있으면 코드가 직접 보냅니다. GTM�
 | DLV - position_selected | `position_selected` |
 | DLV - section_name | `section_name` |
 | DLV - field_name | `field_name` |
+| DLV - field_filled | `field_filled` |
+| DLV - field_valid | `field_valid` |
 | DLV - error_type | `error_type` |
 | DLV - last_section | `last_section` |
 | DLV - last_field | `last_field` |
@@ -67,6 +72,7 @@ GA4는 `VITE_GA_MEASUREMENT_ID`가 있으면 코드가 직접 보냅니다. GTM�
 | CE - page_view | `page_view` | 진입 |
 | CE - form_view | `form_view` | 퍼널 시작 |
 | CE - form_start | `form_start` | 첫 유효 입력 |
+| CE - input_leave | `input_leave` | 이탈 칸 |
 | CE - position_selected | `position_selected` | 직군 선택 |
 | CE - submit_attempt | `submit_attempt` | 제출 시도 |
 | CE - generate_lead | `generate_lead` | **전환** |

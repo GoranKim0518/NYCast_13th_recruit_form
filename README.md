@@ -182,7 +182,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS applications_client_submission_id_uidx
 
 ### GA4 마케팅 분석 설정
 
-이벤트 전체 목록과 SPA에서 GTM을 다는 방법은 [`docs/ga4-event-spec.md`](./docs/ga4-event-spec.md)를 따릅니다.
+이벤트 전체 목록과 SPA에서 GTM을 다는 방법은 [`docs/ga4-event-spec.md`](./docs/ga4-event-spec.md)를 따릅니다.  
+GTM 가져오기 파일: [`docs/gtm/nycast-13th-recruit-container.json`](./docs/gtm/nycast-13th-recruit-container.json)
 
 **전송 금지:** 이름, 연락처, 이메일, 작성 텍스트 등 모든 PII  
 **핵심 이벤트(전환):** `generate_lead`, `form_submitted`
@@ -229,6 +230,7 @@ https://nycast-13th-recruit-form.vercel.app/?utm_source=instagram&utm_medium=soc
 | `form_engaged` / `form_start` | 첫 유효 입력 | `form_start`는 GA4 권장 이벤트 |
 | `section_reached` | 섹션 30% 노출, 1회 | |
 | `field_completed` | blur + 검증 통과 | |
+| `input_leave` | 칸을 벗어남 (빈 칸 포함) | 이탈 칸. `field_name`, `field_filled`, `field_valid` |
 | `field_error` | 검증 실패 | |
 | `position_selected` | 기본 정보 통과 후 직군 선택 | 사용자 속성 `selected_position`도 설정. 기본 정보 전에 누르면 이벤트 없음 |
 | `submit_attempt` / `form_submit` | **검증 통과 후** 제출 | 유효성 실패는 제외 |
@@ -243,7 +245,7 @@ Exploration 퍼널:
 `form_view → form_start → position_selected → submit_attempt → generate_lead`
 
 `position_selected`는 기본 정보(이름~영감, 형식 포함)를 통과한 뒤에만 찍힙니다.  
-`form_start` → `position_selected` 이탈은 기본 정보 구간, 그 이후는 직군 문항 구간입니다.
+이탈 칸: `input_leave`를 `field_name`으로, `form_abandon`을 `last_field`로 쪼갭니다.
 
 획득 보고서:
 

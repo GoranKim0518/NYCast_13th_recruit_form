@@ -64,18 +64,19 @@
 | 4 | `form_start` | 첫 유효 입력 완료 | | GA4 권장 이벤트 |
 | 5 | `section_reached` | 섹션 30% 노출, 1회 | `section_name` | `common` `pd` `marketer` `designer` |
 | 6 | `field_completed` | 칸을 벗어남 + 값 있음 + 검증 통과 | `field_name`, `section_name` | 빈 칸은 안 나감 |
-| 7 | `field_error` | 값 있는데 형식 오류, 또는 제출 검증 실패 | `field_name`, `error_type` | 아래 값 목록 |
-| 8 | `position_selected` | 기본 정보를 모두 통과한 뒤 지원분야 라디오 | `position_selected` | 사용자 속성 `selected_position`도 set. 기본 정보 전에 누르면 이벤트 없음 |
-| 9 | `form_disclosure` | 접기/펼치기 | `section_name`, `disclosure_action`, `disclosure_trigger` | |
-| 10 | `submit_attempt` | 검증 통과 후 제출 클릭 | `position_selected` | |
-| 11 | `form_submit` | 위와 동일 시점 | `form_name`, `position_selected` | GA4 권장 이벤트 |
-| 12 | `form_submitted` | DB 저장 성공 | `position_selected`, `is_completed` | **전환** |
-| 13 | `generate_lead` | DB 저장 성공 | `currency`, `value`, `lead_source`, `position_selected`, `is_completed` | **전환** |
-| 14 | `submit_failed` | 네트워크/서버 오류 | `error_type` | |
-| 15 | `form_abandon` | 페이지 이탈 (`pagehide`) | `last_section`, `last_field`, `fields_completed_count`, `position_selected`, `abandon_type` | 제출 성공 시 안 나감. 칸을 안 건드리면 `last_field`는 `(none)` |
-| 16 | `draft_restored` | 초안 복원 | | |
-| 17 | `draft_cleared` | 제출 후 초안 삭제 | | |
-| 18 | `form_completed_view` | 완료 화면 | `is_completed` | |
+| 7 | `input_leave` | 칸을 벗어남 (빈 칸 포함) | `field_name`, `section_name`, `field_filled`, `field_valid`, `error_type`, `position_selected` | **이탈 칸**. 라디오끼리 이동은 안 나감 |
+| 8 | `field_error` | 값 있는데 형식 오류, 또는 제출 검증 실패 | `field_name`, `error_type` | 아래 값 목록 |
+| 9 | `position_selected` | 기본 정보를 모두 통과한 뒤 지원분야 라디오 | `position_selected` | 사용자 속성 `selected_position`도 set. 기본 정보 전에 누르면 이벤트 없음 |
+| 10 | `form_disclosure` | 접기/펼치기 | `section_name`, `disclosure_action`, `disclosure_trigger` | |
+| 11 | `submit_attempt` | 검증 통과 후 제출 클릭 | `position_selected` | |
+| 12 | `form_submit` | 위와 동일 시점 | `form_name`, `position_selected` | GA4 권장 이벤트 |
+| 13 | `form_submitted` | DB 저장 성공 | `position_selected`, `is_completed` | **전환** |
+| 14 | `generate_lead` | DB 저장 성공 | `currency`, `value`, `lead_source`, `position_selected`, `is_completed` | **전환** |
+| 15 | `submit_failed` | 네트워크/서버 오류 | `error_type` | |
+| 16 | `form_abandon` | 페이지 이탈 (`pagehide`) | `last_section`, `last_field`, `fields_completed_count`, `position_selected`, `abandon_type` | 제출 성공 시 안 나감. 칸을 안 건드리면 `last_field`는 `(none)` |
+| 17 | `draft_restored` | 초안 복원 | | |
+| 18 | `draft_cleared` | 제출 후 초안 삭제 | | |
+| 19 | `form_completed_view` | 완료 화면 | `is_completed` | |
 
 한 번의 사용자 행동으로 두 개가 나가는 쌍:
 
@@ -103,6 +104,14 @@ PD: `pd_strategy`, `pd_idea`, `pd_tools`, `pd_experience`, `pd_comment`, `pd_inf
 디자이너: `des_challenge`, `des_portfolio_url`, `des_comment`, `des_inflow_channel`
 
 칸 구분은 `field_name` / `last_field`입니다. `section_name`은 기본 정보(`common`) 또는 직군 덩어리입니다.
+
+**`field_filled` / `field_valid` (`input_leave`)**
+
+| 값 | 의미 |
+|----|------|
+| `true` / `false` | 칸에 값이 있는지, 검증을 통과했는지 |
+
+빈 필수칸을 벗어나면 `field_filled=false`, `field_valid=false`, `error_type=required`입니다.
 
 **`error_type` (필드)**
 
@@ -184,6 +193,8 @@ PD: `pd_strategy`, `pd_idea`, `pd_tools`, `pd_experience`, `pd_comment`, `pd_inf
 | DLV - position_selected | `position_selected` |
 | DLV - section_name | `section_name` |
 | DLV - field_name | `field_name` |
+| DLV - field_filled | `field_filled` |
+| DLV - field_valid | `field_valid` |
 | DLV - error_type | `error_type` |
 | DLV - last_section | `last_section` |
 | DLV - last_field | `last_field` |
@@ -215,6 +226,7 @@ PD: `pd_strategy`, `pd_idea`, `pd_tools`, `pd_experience`, `pd_comment`, `pd_inf
 | CE - form_start | `form_start` | 첫 유효 입력 |
 | CE - section_reached | `section_reached` | 섹션 노출 |
 | CE - field_completed | `field_completed` | 칸 완료 |
+| CE - input_leave | `input_leave` | **이탈 칸** |
 | CE - field_error | `field_error` | 검증 실패 |
 | CE - position_selected | `position_selected` | 직군 |
 | CE - form_disclosure | `form_disclosure` | 접기/펼치기 |
@@ -235,20 +247,25 @@ PD: `pd_strategy`, `pd_idea`, `pd_tools`, `pd_experience`, `pd_comment`, `pd_inf
 
 ### 3.5 태그
 
+가져올 파일: [`gtm/nycast-13th-recruit-container.json`](./gtm/nycast-13th-recruit-container.json)
+
+GTM → 관리 → **컨테이너 가져오기** → 위 JSON → **병합** (충돌 시 이름 변경).
+
 **넣지 말 것**
 
 - Google 태그 / GA4 구성 (`G-…`)
 - GA4 이벤트 태그로 위 이벤트를 다시 보냄  
   → 앱이 이미 GA4로 보냄. 중복됨.
 
-**넣어도 되는 것 (픽셀)**
+JSON에 들어 있는 태그:
 
-| 태그 | 유형 | 트리거 |
-|------|------|--------|
-| Meta Pixel - PageView | 맞춤 HTML | CE - page_view |
-| Meta Pixel - Lead | 맞춤 HTML | CE - generate_lead |
-| 카카오 픽셀 - 전환 | 맞춤 HTML | CE - generate_lead |
-| (선택) 이탈 리타겟 | 맞춤 HTML | CE - form_abandon |
+| 태그 | 트리거 | 기본 |
+|------|--------|------|
+| 이탈 분석 - input_leave | CE - input_leave | 켜짐. 칸을 벗어날 때 |
+| 이탈 분석 - form_abandon | CE - form_abandon | 켜짐. 페이지 이탈 |
+| 전환 분석 - generate_lead | CE - generate_lead | 켜짐. 제출 성공 |
+| Meta Pixel - PageView / Lead | page_view / generate_lead | **일시중지**. `C - Meta Pixel ID` 넣고 켜기 |
+| Kakao Pixel - Conversion | generate_lead | **일시중지**. `C - Kakao Pixel ID` 넣고 켜기 |
 
 `generate_lead` 한 번만 전환으로 쓰세요. `form_submitted`와 같이 걸면 전환이 두 번입니다.
 
@@ -257,7 +274,7 @@ PD: `pd_strategy`, `pd_idea`, `pd_tools`, `pd_experience`, `pd_comment`, `pd_inf
 1. GTM 미리보기 → 프로덕션 URL
 2. UTM 붙인 링크로 폼 오픈
 3. dataLayer 탭에 `page_view`, `form_view`가 있으면 연결됨
-4. 이름 칸 채우고 다음 칸 → `field_completed`, `form_start`
+4. 이름 칸 채우고 다음 칸 → `input_leave`, `field_completed`, `form_start`
 5. 기본 정보를 비운 채로 지원분야를 누르면 `position_selected`가 **없어야** 함
 6. 기본 정보를 모두 채운 뒤 직군 선택 → `position_selected`
 7. 제출 성공 → `generate_lead` **1회**
@@ -278,7 +295,7 @@ SPA History Change 트리거는 이 사이트에서 쓰지 않습니다.
 3. `generate_lead`, `form_submitted` → 핵심 이벤트
 4. 맞춤 정의(이벤트 범위)에 등록:
 
-`campaign_source`, `campaign_medium`, `campaign_name`, `campaign_content`, `campaign_term`, `position_selected`, `section_name`, `field_name`, `error_type`, `last_section`, `last_field`, `abandon_type`, `fields_completed_count`, `has_gclid`, `has_fbclid`, `lead_source`, `form_session_id`, `disclosure_action`, `disclosure_trigger`
+`campaign_source`, `campaign_medium`, `campaign_name`, `campaign_content`, `campaign_term`, `position_selected`, `section_name`, `field_name`, `field_filled`, `field_valid`, `error_type`, `last_section`, `last_field`, `abandon_type`, `fields_completed_count`, `has_gclid`, `has_fbclid`, `lead_source`, `form_session_id`, `disclosure_action`, `disclosure_trigger`
 
 5. 사용자 범위: `selected_position`
 6. `hostname` = `localhost` 세션 제외
@@ -297,7 +314,7 @@ SPA History Change 트리거는 이 사이트에서 쓰지 않습니다.
 
 기본 정보 없이 지원분야를 눌러도 `position_selected` / `field_error`는 안 나갑니다. 라디오가 잠겨 있어서 `last_field`는 직전 기본 정보 칸으로 남는 경우가 많습니다.
 
-이탈 칸: `form_abandon`을 `last_field`, `abandon_type`으로 쪼갭니다.
+이탈 칸: `input_leave`를 `field_name`으로, `form_abandon`을 `last_field` / `abandon_type`으로 쪼갭니다.
 
 ---
 

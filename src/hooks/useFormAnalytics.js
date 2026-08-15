@@ -6,6 +6,7 @@ import {
   trackFormAbandon,
   trackFormEngaged,
   trackFormView,
+  trackInputLeave,
   trackSectionReached,
   trackSubmitAttempt,
   trackSubmitFailed,
@@ -158,14 +159,26 @@ export function useFormAnalytics({
       const values = getValuesRef.current();
       const value = values[fieldName];
       const filled = typeof value === 'string' && value.trim().length > 0;
+      const fieldError = validateApplication(values)[fieldName];
+      const errorType = fieldError
+        ? mapValidationErrorType(fieldError)
+        : undefined;
+
+      trackInputLeave({
+        fieldName,
+        sectionName,
+        fieldFilled: filled,
+        fieldValid: !fieldError,
+        errorType,
+        positionSelected: values.position,
+      });
 
       if (!filled) {
         return;
       }
 
-      const fieldError = validateApplication(values)[fieldName];
       if (fieldError) {
-        trackFieldError(fieldName, mapValidationErrorType(fieldError));
+        trackFieldError(fieldName, errorType);
         return;
       }
 
@@ -212,6 +225,15 @@ export function useFormAnalytics({
       }
 
       if (isComposing(target, event)) {
+        return;
+      }
+
+      const related = event.relatedTarget;
+      if (
+        related instanceof HTMLInputElement &&
+        related.type === 'radio' &&
+        related.name === target.name
+      ) {
         return;
       }
 
