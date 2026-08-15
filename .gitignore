@@ -15,6 +15,9 @@ dist/
 dist-ssr/
 *.local
 
+# Internal ops docs (UTM, GA4/GTM spec, sheet sync) — not for the public repo
+docs/
+
 # Environment variables (보안 필수: Git 추적 절대 금지)
 .env
 .env.production

@@ -8,11 +8,6 @@ React + Vite + Tailwind CSS + Supabase + GA4 스택으로 구성되어 있습니
 - **Tally 스타일 UI**: 미니멀하고 문서형 레이아웃, 보라색 액센트
 - **직군별 조건부 폼**: PD / 홍보마케터 / 디자이너 선택에 따른 분기
 - **보안**: Supabase RLS (INSERT 전용), XSS 입력값 검증, GA4 PII 미수집
-
-운영 문서:
-
-- [채널별 UTM 링크](docs/utm-campaigns.md)
-- [GA4 · GTM 연결 / 시트 4시간 동기화](docs/ga4-gtm-and-sheets.md)
 - **모바일 최적화**: iOS 자동 줌 방지 (16px), 44px 터치 타겟, Safe Area 대응
 
 ## 기술 스택
@@ -182,8 +177,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS applications_client_submission_id_uidx
 
 ### GA4 마케팅 분석 설정
 
-이벤트 전체 목록과 SPA에서 GTM을 다는 방법은 [`docs/ga4-event-spec.md`](./docs/ga4-event-spec.md)를 따릅니다.  
-GTM 가져오기 파일: [`docs/gtm/nycast-13th-recruit-container.json`](./docs/gtm/nycast-13th-recruit-container.json)
+이벤트 이름·GTM 트리거·UTM·시트 동기화 명세는 로컬 `docs/`에만 둡니다. 공개 저장소에는 포함하지 않습니다.
 
 **전송 금지:** 이름, 연락처, 이메일, 작성 텍스트 등 모든 PII  
 **핵심 이벤트(전환):** `generate_lead`, `form_submitted`
