@@ -54,6 +54,8 @@
 
 `page_view` → `form_view` → `form_start` → `position_selected` → `submit_attempt` → `form_submitted` / `generate_lead`
 
+지원분야(`position_selected`)는 기본 정보가 형식까지 통과한 뒤에만 나갑니다. GTM 트리거 이름은 그대로입니다.
+
 | # | event | 언제 | 추가 파라미터 | 비고 |
 |---|--------|------|----------------|------|
 | 1 | `page_view` | 앱 초기화 | `page_path`, `page_location`, `page_title` | 쿼리스트링 포함 |
@@ -63,7 +65,7 @@
 | 5 | `section_reached` | 섹션 30% 노출, 1회 | `section_name` | `common` `pd` `marketer` `designer` |
 | 6 | `field_completed` | 칸을 벗어남 + 값 있음 + 검증 통과 | `field_name`, `section_name` | 빈 칸은 안 나감 |
 | 7 | `field_error` | 값 있는데 형식 오류, 또는 제출 검증 실패 | `field_name`, `error_type` | 아래 값 목록 |
-| 8 | `position_selected` | 지원분야 라디오 | `position_selected` | 사용자 속성 `selected_position`도 set |
+| 8 | `position_selected` | 기본 정보를 모두 통과한 뒤 지원분야 라디오 | `position_selected` | 사용자 속성 `selected_position`도 set. 기본 정보 전에 누르면 이벤트 없음 |
 | 9 | `form_disclosure` | 접기/펼치기 | `section_name`, `disclosure_action`, `disclosure_trigger` | |
 | 10 | `submit_attempt` | 검증 통과 후 제출 클릭 | `position_selected` | |
 | 11 | `form_submit` | 위와 동일 시점 | `form_name`, `position_selected` | GA4 권장 이벤트 |
@@ -126,7 +128,9 @@ PD: `pd_strategy`, `pd_idea`, `pd_tools`, `pd_experience`, `pd_comment`, `pd_inf
 | `partial` | 하나라도 쓰고 나감 |
 
 **`disclosure_action`:** `open` | `close`  
-**`disclosure_trigger`:** `user` | `position_selected` | `validation_error`
+**`disclosure_trigger`:** `user` | `position_selected` | `validation_error` | `basic_info_required`
+
+`basic_info_required`는 기본 정보가 접힌 뒤(이미 직군을 고른 뒤) 필수값을 지우고 다른 직군을 고르려 할 때만 나갑니다. 첫 방문에서 기본 정보는 펼쳐져 있으므로 이 트리거는 안 나갑니다.
 
 **`generate_lead` 전용**
 
@@ -254,9 +258,12 @@ PD: `pd_strategy`, `pd_idea`, `pd_tools`, `pd_experience`, `pd_comment`, `pd_inf
 2. UTM 붙인 링크로 폼 오픈
 3. dataLayer 탭에 `page_view`, `form_view`가 있으면 연결됨
 4. 이름 칸 채우고 다음 칸 → `field_completed`, `form_start`
-5. 직군 선택 → `position_selected`
-6. 제출 성공 → `generate_lead` **1회**
-7. 작성 중 탭 닫기 → `form_abandon` (미리보기는 이탈 재현이 어려울 수 있음)
+5. 기본 정보를 비운 채로 지원분야를 누르면 `position_selected`가 **없어야** 함
+6. 기본 정보를 모두 채운 뒤 직군 선택 → `position_selected`
+7. 제출 성공 → `generate_lead` **1회**
+8. 작성 중 탭 닫기 → `form_abandon` (미리보기는 이탈 재현이 어려울 수 있음)
+
+로컬(`localhost`)에서 `googletagmanager.com` / `gtag/js`가 차단되면 광고 차단기입니다. 폼은 동작하고, 이벤트는 프로덕션이나 차단을 끈 브라우저에서 확인합니다.
 
 SPA History Change 트리거는 이 사이트에서 쓰지 않습니다.
 
@@ -279,6 +286,16 @@ SPA History Change 트리거는 이 사이트에서 쓰지 않습니다.
 탐색 퍼널 권장:
 
 `form_view` → `form_start` → `position_selected` → `submit_attempt` → `generate_lead`
+
+작성 순서가 이 퍼널과 같습니다. 지원분야는 기본 정보(이름~영감, 형식 포함)가 통과해야 고를 수 있습니다.
+
+| 구간 | 의미 |
+|------|------|
+| `form_start` → `position_selected` | 기본 정보를 못 채우고 나감 |
+| `position_selected` 이후 | 직군 문항에서 멈춤 |
+| `form_abandon` + 직군 있음 | 기본 정보는 채운 사람 |
+
+기본 정보 없이 지원분야를 눌러도 `position_selected` / `field_error`는 안 나갑니다. 라디오가 잠겨 있어서 `last_field`는 직전 기본 정보 칸으로 남는 경우가 많습니다.
 
 이탈 칸: `form_abandon`을 `last_field`, `abandon_type`으로 쪼갭니다.
 

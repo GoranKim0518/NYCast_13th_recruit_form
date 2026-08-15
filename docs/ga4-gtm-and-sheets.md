@@ -75,6 +75,10 @@ GA4는 `VITE_GA_MEASUREMENT_ID`가 있으면 코드가 직접 보냅니다. GTM�
 
 미리보기에서 `dataLayer` 탭에 위 이름이 보여야 연결입니다.
 
+`position_selected`는 기본 정보(이름~영감)를 통과한 뒤에만 나갑니다. 직군부터 눌러도 이 트리거는 켜지지 않습니다.
+
+로컬에서 GTM/gtag 스크립트가 차단되면 광고 차단기입니다. 미리보기는 프로덕션 URL에서 합니다.
+
 ### 태그
 
 **하지 말 것**
@@ -161,7 +165,8 @@ https://nycast-13th-recruit-form.vercel.app
 1. GA4 관리 → DebugView
 2. 지원 링크에 UTM을 붙인 채로 폼을 엽니다
 3. `page_view`, `form_view`가 보이면 연결 성공입니다
-4. 테스트 제출 후 `generate_lead`가 보이면 전환까지 연결된 것입니다
+4. 기본 정보를 채운 뒤 직군을 고르면 `position_selected`가 보입니다
+5. 테스트 제출 후 `generate_lead`가 보이면 전환까지 연결된 것입니다
 
 채널별 URL은 [`utm-campaigns.md`](./utm-campaigns.md)를 씁니다.
 

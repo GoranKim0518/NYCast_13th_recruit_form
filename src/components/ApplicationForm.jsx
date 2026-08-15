@@ -17,7 +17,10 @@ import {
 import {
   POSITIONS,
   buildSubmissionPayload,
+  BASIC_INFO_FIRST_MESSAGE,
+  getBasicInfoErrors,
   getFieldError,
+  isBasicInfoComplete,
   readFormData,
   validateApplication,
 } from '../utils/formConfig';
@@ -201,6 +204,9 @@ export default function ApplicationForm({ onSuccess }) {
   const [errors, setErrors] = useState({});
   const [rootError, setRootError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [basicInfoReady, setBasicInfoReady] = useState(() =>
+    isBasicInfoComplete(defaults),
+  );
   errorsRef.current = errors;
 
   const getValues = useCallback((fieldName) => {
@@ -256,6 +262,22 @@ export default function ApplicationForm({ onSuccess }) {
   useEffect(() => {
     positionRef.current = position;
   }, [position]);
+
+  useEffect(() => {
+    if (!basicInfoReady) {
+      return;
+    }
+
+    setErrors((prev) => {
+      if (prev.position?.message !== BASIC_INFO_FIRST_MESSAGE) {
+        return prev;
+      }
+
+      const next = { ...prev };
+      delete next.position;
+      return next;
+    });
+  }, [basicInfoReady]);
 
   const updateFieldError = useCallback((fieldName, nextPosition) => {
     if (!fieldName || !formRef.current) {
@@ -325,48 +347,123 @@ export default function ApplicationForm({ onSuccess }) {
       updateFieldError(name);
     };
 
+    const syncBasicInfoReady = () => {
+      setBasicInfoReady(isBasicInfoComplete(readFormData(form)));
+    };
+
     form.addEventListener('focusout', onFocusOut);
     form.addEventListener('input', onInput, true);
+    form.addEventListener('input', syncBasicInfoReady, true);
+    form.addEventListener('change', syncBasicInfoReady, true);
+    syncBasicInfoReady();
 
     return () => {
       form.removeEventListener('focusout', onFocusOut);
       form.removeEventListener('input', onInput, true);
+      form.removeEventListener('input', syncBasicInfoReady, true);
+      form.removeEventListener('change', syncBasicInfoReady, true);
     };
   }, [updateFieldError]);
 
+  const revealFirstErrorField = useCallback((formErrors, currentPosition, reason) => {
+    const firstErrorField = getFirstErrorField(formErrors, currentPosition);
+    const form = formRef.current;
+
+    if (!firstErrorField || !form) {
+      return;
+    }
+
+    if (isCollapsedCommonField(firstErrorField)) {
+      commonDisclosureRef.current?.setOpen(true, reason);
+    }
+
+    const reveal = () => {
+      const field = form.elements.namedItem(firstErrorField);
+      const element = field instanceof RadioNodeList ? field[0] : field;
+      if (element instanceof HTMLElement) {
+        element.focus();
+        scrollElementIntoView(element, { block: 'center' });
+      }
+    };
+
+    if (isCollapsedCommonField(firstErrorField)) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(reveal);
+      });
+    } else {
+      reveal();
+    }
+  }, []);
+
+  const showBasicInfoGate = useCallback(
+    (basicErrors) => {
+      setErrors((prev) => ({
+        ...prev,
+        ...basicErrors,
+        position: {
+          message: BASIC_INFO_FIRST_MESSAGE,
+          type: 'validate',
+        },
+      }));
+      revealFirstErrorField(basicErrors, '', 'basic_info_required');
+    },
+    [revealFirstErrorField],
+  );
+
+  const selectPosition = useCallback((nextPosition) => {
+    if (!nextPosition) {
+      return;
+    }
+
+    saveMountedFormCache(formRef.current);
+    positionRef.current = nextPosition;
+    setPosition(nextPosition);
+    trackPositionSelected(nextPosition);
+    setErrors((prev) => {
+      const next = { ...prev };
+      for (const key of Object.keys(next)) {
+        if (
+          (key.startsWith('pd_') && nextPosition !== 'PD') ||
+          (key.startsWith('mkt_') && nextPosition !== '홍보마케터') ||
+          (key.startsWith('des_') && nextPosition !== '디자이너')
+        ) {
+          delete next[key];
+        }
+      }
+      delete next.position;
+      return next;
+    });
+
+    if (submitAttemptedRef.current) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const data = readFormData(formRef.current);
+          data.position = nextPosition;
+          setErrors(validateApplication(data));
+        });
+      });
+    }
+  }, []);
+
+  const trySelectPosition = useCallback(
+    (nextPosition) => {
+      const basicErrors = getBasicInfoErrors(readFormData(formRef.current));
+
+      if (Object.keys(basicErrors).length > 0) {
+        showBasicInfoGate(basicErrors);
+        return;
+      }
+
+      selectPosition(nextPosition);
+    },
+    [selectPosition, showBasicInfoGate],
+  );
+
   const handlePositionChange = useCallback(
     (event) => {
-      saveMountedFormCache(formRef.current);
-      const nextPosition = event.target.value;
-      positionRef.current = nextPosition;
-      setPosition(nextPosition);
-      trackPositionSelected(nextPosition);
-      setErrors((prev) => {
-        const next = { ...prev };
-        for (const key of Object.keys(next)) {
-          if (
-            (key.startsWith('pd_') && nextPosition !== 'PD') ||
-            (key.startsWith('mkt_') && nextPosition !== '홍보마케터') ||
-            (key.startsWith('des_') && nextPosition !== '디자이너')
-          ) {
-            delete next[key];
-          }
-        }
-        delete next.position;
-        return next;
-      });
-
-      if (submitAttemptedRef.current) {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            const data = readFormData(formRef.current);
-            data.position = nextPosition;
-            setErrors(validateApplication(data));
-          });
-        });
-      }
+      trySelectPosition(event.target.value);
     },
-    [],
+    [trySelectPosition],
   );
 
   const handleCommonUserToggle = useCallback((nextOpen) => {
@@ -393,33 +490,7 @@ export default function ApplicationForm({ onSuccess }) {
       onValidationFailed(formErrors);
       setErrors(formErrors);
       setRootError('');
-
-      const firstErrorField = getFirstErrorField(formErrors, position);
-      const form = event.currentTarget;
-
-      if (firstErrorField && isCollapsedCommonField(firstErrorField)) {
-        commonDisclosureRef.current?.setOpen(true, 'validation_error');
-      }
-
-      if (firstErrorField) {
-        const reveal = () => {
-          const field = form.elements.namedItem(firstErrorField);
-          const element =
-            field instanceof RadioNodeList ? field[0] : field;
-          if (element instanceof HTMLElement) {
-            element.focus();
-            scrollElementIntoView(element, { block: 'center' });
-          }
-        };
-
-        if (isCollapsedCommonField(firstErrorField)) {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(reveal);
-          });
-        } else {
-          reveal();
-        }
-      }
+      revealFirstErrorField(formErrors, position, 'validation_error');
       return;
     }
 
@@ -483,10 +554,13 @@ export default function ApplicationForm({ onSuccess }) {
             name="position"
             label="지원분야"
             required
+            hint={basicInfoReady ? undefined : BASIC_INFO_FIRST_MESSAGE}
             options={POSITIONS}
             value={position}
             error={errors.position?.message}
+            locked={!basicInfoReady}
             onChange={handlePositionChange}
+            onLockedSelect={trySelectPosition}
           />
         {position === 'PD' && (
           <PositionSection

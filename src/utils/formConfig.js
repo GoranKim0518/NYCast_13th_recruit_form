@@ -1,6 +1,7 @@
 export const POSITIONS = ['PD', '홍보마케터', '디자이너'];
 
 export const REQUIRED_MESSAGE = '필수 질문입니다.';
+export const BASIC_INFO_FIRST_MESSAGE = '기본 정보를 먼저 작성해 주세요.';
 export const PHONE_REGEX = /^010-\d{4}-\d{4}$/;
 export const EMAIL_REGEX = /@/;
 export const BIRTH_DATE_REGEX = /^\d{8}$/;
@@ -146,7 +147,7 @@ export function getFieldError(data, fieldName) {
   return validateApplication(data)[fieldName];
 }
 
-export function validateApplication(data) {
+export function getBasicInfoErrors(data) {
   const errors = {};
 
   setRequired(errors, data, 'name');
@@ -185,6 +186,17 @@ export function validateApplication(data) {
   }
 
   setRequired(errors, data, 'inspiration_source');
+
+  return errors;
+}
+
+export function isBasicInfoComplete(data) {
+  return Object.keys(getBasicInfoErrors(data)).length === 0;
+}
+
+export function validateApplication(data) {
+  const errors = getBasicInfoErrors(data);
+
   setRequired(errors, data, 'position');
 
   if (data.position === 'PD') {

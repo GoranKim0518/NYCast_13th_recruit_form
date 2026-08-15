@@ -11,6 +11,8 @@ export default function RadioGroup({
   value,
   error,
   onChange,
+  locked = false,
+  onLockedSelect,
 }) {
   return (
     <FormField
@@ -20,15 +22,34 @@ export default function RadioGroup({
       hint={getFieldHint(name, hint)}
       error={error}
     >
-      <div className="space-y-2" role="radiogroup" aria-required={required ? 'true' : 'false'}>
+      <div
+        className="space-y-2"
+        role="radiogroup"
+        aria-required={required ? 'true' : 'false'}
+        aria-disabled={locked ? 'true' : undefined}
+      >
         {options.map((option) => (
           <label
             key={option}
             htmlFor={`${name}-${option}`}
-            className={`flex min-h-12 cursor-default items-center gap-3 rounded-lg border px-4 py-3 transition-colors touch-manipulation [@media(hover:hover)_and_(pointer:fine)]:cursor-pointer has-[:checked]:border-violet-500 has-[:checked]:bg-violet-50 ${
+            onClick={(event) => {
+              if (!locked) {
+                return;
+              }
+
+              event.preventDefault();
+              onLockedSelect?.(option);
+            }}
+            className={`flex min-h-12 items-center gap-3 rounded-lg border px-4 py-3 transition-colors touch-manipulation has-[:checked]:border-violet-500 has-[:checked]:bg-violet-50 ${
+              locked
+                ? 'cursor-not-allowed'
+                : 'cursor-default [@media(hover:hover)_and_(pointer:fine)]:cursor-pointer'
+            } ${
               error
                 ? 'border-red-500'
-                : 'border-gray-200 [@media(hover:hover)]:hover:border-violet-300'
+                : locked
+                  ? 'border-gray-200'
+                  : 'border-gray-200 [@media(hover:hover)]:hover:border-violet-300'
             }`}
           >
             <input
@@ -37,7 +58,8 @@ export default function RadioGroup({
               name={name}
               value={option}
               checked={value === option}
-              className="h-5 w-5 shrink-0 touch-manipulation accent-violet-600"
+              className="pointer-events-none h-5 w-5 shrink-0 accent-violet-600"
+              tabIndex={locked ? -1 : 0}
               onChange={onChange}
             />
             <span className="text-base text-gray-900">{option}</span>

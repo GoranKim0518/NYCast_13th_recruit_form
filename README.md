@@ -22,7 +22,7 @@ React + Vite + Tailwind CSS + Supabase + GA4 스택으로 구성되어 있습니
 | Frontend | React 19, Vite 6, Tailwind CSS 4 |
 | Form | react-hook-form (Uncontrolled Components) |
 | Backend | Supabase (PostgreSQL + RLS) |
-| Analytics | react-ga4 (비식별 메타데이터만) |
+| Analytics | react-ga4 + GTM dataLayer (비식별 메타데이터만) |
 
 ## 시작하기
 
@@ -230,7 +230,7 @@ https://nycast-13th-recruit-form.vercel.app/?utm_source=instagram&utm_medium=soc
 | `section_reached` | 섹션 30% 노출, 1회 | |
 | `field_completed` | blur + 검증 통과 | |
 | `field_error` | 검증 실패 | |
-| `position_selected` | 직군 선택 | 사용자 속성 `selected_position`도 설정 |
+| `position_selected` | 기본 정보 통과 후 직군 선택 | 사용자 속성 `selected_position`도 설정. 기본 정보 전에 누르면 이벤트 없음 |
 | `submit_attempt` / `form_submit` | **검증 통과 후** 제출 | 유효성 실패는 제외 |
 | `form_submitted` / `generate_lead` | DB 저장 성공 | 전환 |
 | `submit_failed` | 네트워크/서버 오류 | `offline`, `timeout`, `config` 등 |
@@ -241,6 +241,9 @@ https://nycast-13th-recruit-form.vercel.app/?utm_source=instagram&utm_medium=soc
 Exploration 퍼널:
 
 `form_view → form_start → position_selected → submit_attempt → generate_lead`
+
+`position_selected`는 기본 정보(이름~영감, 형식 포함)를 통과한 뒤에만 찍힙니다.  
+`form_start` → `position_selected` 이탈은 기본 정보 구간, 그 이후는 직군 문항 구간입니다.
 
 획득 보고서:
 
@@ -253,17 +256,19 @@ Exploration 퍼널:
 
 ## 지원서 필드
 
+작성 순서: **기본 정보 → 지원분야 → 직군 문항**. 지원분야는 기본 정보가 모두 채워져야 선택할 수 있습니다.
+
 ### 공통 (필수)
 
-이름, 생년월일, 학교명/전공/학번, 거주지, 활동하는 곳, 연락처, 이메일, 지원분야, 영감의 출처
+이름, 생년월일, 학교명/전공/학번, 거주지, 활동하는 곳, 연락처, 이메일, 영감의 출처, 지원분야
 
 ### PD (조건부)
 
 | 필드 | 필수 |
 |------|------|
-| 홍보 전략/개선점 | 선택 |
+| 홍보 전략/개선점 | **필수** |
 | 노원구 기반 프로그램 아이디어 | **필수** |
-| 사용 가능한 툴 | 선택 |
+| 사용 가능한 툴 | **필수** |
 | 콘텐츠 제작 경력 | 선택 |
 | 마무리 한마디 | 선택 |
 | 유입 경로 | **필수** |
@@ -272,8 +277,8 @@ Exploration 퍼널:
 
 | 필드 | 필수 |
 |------|------|
-| 홍보 전략/개선점 | 선택 |
-| 사용 가능한 툴 | 선택 |
+| 홍보 전략/개선점 | **필수** |
+| 사용 가능한 툴 | **필수** |
 | 홍보 관련 경력 | 선택 |
 | 마무리 한마디 | 선택 |
 | 유입 경로 | **필수** |
@@ -282,8 +287,8 @@ Exploration 퍼널:
 
 | 필드 | 필수 |
 |------|------|
-| 도전하고 싶은 디자인 작업 | 선택 |
-| 포트폴리오 URL | 선택 |
+| 도전하고 싶은 디자인 작업 | **필수** |
+| 포트폴리오 | **필수** |
 | 마무리 한마디 | 선택 |
 | 유입 경로 | **필수** |
 
