@@ -12,10 +12,17 @@ export function pushDataLayer(eventName, params = {}) {
   });
 }
 
+function isGtmInstalled() {
+  return Boolean(
+    document.getElementById('gtm-script') ||
+      document.querySelector('script[src*="googletagmanager.com/gtm.js"]'),
+  );
+}
+
 export function initGtm() {
   const id = typeof GTM_CONTAINER_ID === 'string' ? GTM_CONTAINER_ID.trim() : '';
 
-  if (!id || document.getElementById('gtm-script')) {
+  if (!id || isGtmInstalled()) {
     return;
   }
 
