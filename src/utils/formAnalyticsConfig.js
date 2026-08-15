@@ -89,7 +89,9 @@ export function getFirstErrorField(errors, position) {
 }
 
 export function isCollapsedCommonField(fieldName) {
-  return FIELD_SECTIONS.common.includes(fieldName);
+  return (
+    FIELD_SECTIONS.common.includes(fieldName) && fieldName !== 'position'
+  );
 }
 
 export function countCompletedRequiredFields(values) {

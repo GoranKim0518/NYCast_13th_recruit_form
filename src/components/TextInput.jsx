@@ -1,8 +1,8 @@
 import FormField from './FormField';
 import { getFieldHint, getFieldHtml } from '../constants/formHints';
 
-const inputClassName =
-  'w-full min-h-12 touch-manipulation rounded-lg border bg-white px-4 py-3 text-base leading-normal text-gray-900 placeholder:text-gray-400 transition-colors focus:outline-none focus:ring-2';
+const fieldClassName =
+  'w-full touch-manipulation rounded-lg border bg-white px-4 text-base text-gray-900 placeholder:text-gray-400 transition-colors focus:outline-none focus:ring-2';
 
 function FieldControl({
   id,
@@ -32,11 +32,15 @@ function FieldControl({
     placeholder,
     maxLength,
     autoComplete: 'off',
-    className: `${inputClassName} ${
+    className: `${fieldClassName} ${
       error
         ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
         : 'border-gray-200 focus:border-violet-500 focus:ring-violet-500/20'
-    } ${multiline ? 'min-h-32 resize-y' : ''}`,
+    } ${
+      multiline
+        ? 'resize-y py-3 leading-[24px]'
+        : 'h-12 py-0 leading-5'
+    }`,
     'aria-invalid': error ? 'true' : 'false',
     'aria-required': required ? 'true' : 'false',
     'aria-describedby': describedBy,

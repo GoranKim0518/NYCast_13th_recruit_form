@@ -17,6 +17,7 @@ import {
 import {
   POSITIONS,
   buildSubmissionPayload,
+  getFieldError,
   readFormData,
   validateApplication,
 } from '../utils/formConfig';
@@ -72,10 +73,11 @@ function PositionSection({ sectionRef, dataSection, title, position, children })
   );
 }
 
-function CommonFields({ defaults, errors, position, onPositionChange }) {
+function CommonFields({ defaults, errors }) {
   return (
     <div className="space-y-6 sm:space-y-8">
       <TextInput
+        maxLength={20}
         id="name"
         label="이름"
         required
@@ -85,6 +87,7 @@ function CommonFields({ defaults, errors, position, onPositionChange }) {
       />
 
       <TextInput
+        maxLength={8}
         id="birth_date"
         label="생년월일(YYYYMMDD)"
         required
@@ -94,6 +97,7 @@ function CommonFields({ defaults, errors, position, onPositionChange }) {
       />
 
       <TextInput
+        maxLength={150}
         id="academic_info"
         label="학교명/전공학과/학번(입학년도)"
         required
@@ -103,6 +107,7 @@ function CommonFields({ defaults, errors, position, onPositionChange }) {
       />
 
       <TextInput
+        maxLength={150}
         id="residence"
         label="거주지"
         required
@@ -121,6 +126,7 @@ function CommonFields({ defaults, errors, position, onPositionChange }) {
       />
 
       <TextInput
+        maxLength={13}
         id="phone"
         label="연락처"
         required
@@ -146,16 +152,6 @@ function CommonFields({ defaults, errors, position, onPositionChange }) {
         defaultValue={defaults.inspiration_source}
         error={errors.inspiration_source?.message}
       />
-
-      <RadioGroup
-        name="position"
-        label="지원분야"
-        required
-        options={POSITIONS}
-        value={position}
-        error={errors.position?.message}
-        onChange={onPositionChange}
-      />
     </div>
   );
 }
@@ -174,6 +170,7 @@ function PositionClosingFields({ prefix, defaults, errors }) {
         error={errors[commentId]?.message}
       />
       <TextInput
+        maxLength={150}
         id={inflowId}
         label="유입 경로"
         required
@@ -194,13 +191,17 @@ export default function ApplicationForm({ onSuccess }) {
   const formRef = useRef(null);
   const commonDisclosureRef = useRef(null);
   const nextStepRef = useRef(null);
+  const commonFieldsRef = useRef(null);
   const skipAutoScrollRef = useRef(true);
   const submitAttemptedRef = useRef(false);
+  const positionRef = useRef(defaults.position);
+  const errorsRef = useRef({});
 
   const [position, setPosition] = useState(defaults.position);
   const [errors, setErrors] = useState({});
   const [rootError, setRootError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  errorsRef.current = errors;
 
   const getValues = useCallback((fieldName) => {
     const data = readFormData(formRef.current);
@@ -252,18 +253,33 @@ export default function ApplicationForm({ onSuccess }) {
     skipAutoScrollRef.current = false;
   }, [position]);
 
-  const revalidateIfAttempted = useCallback(
-    (nextPosition = position) => {
-      if (!submitAttemptedRef.current || !formRef.current) {
-        return;
+  useEffect(() => {
+    positionRef.current = position;
+  }, [position]);
+
+  const updateFieldError = useCallback((fieldName, nextPosition) => {
+    if (!fieldName || !formRef.current) {
+      return;
+    }
+
+    const data = readFormData(formRef.current);
+    data.position = nextPosition || positionRef.current || data.position;
+    const fieldError = getFieldError(data, fieldName);
+
+    setErrors((prev) => {
+      if (!fieldError && !prev[fieldName]) {
+        return prev;
       }
 
-      const data = readFormData(formRef.current);
-      data.position = nextPosition || data.position;
-      setErrors(validateApplication(data));
-    },
-    [position],
-  );
+      const next = { ...prev };
+      if (fieldError) {
+        next[fieldName] = fieldError;
+      } else {
+        delete next[fieldName];
+      }
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     const form = formRef.current;
@@ -271,37 +287,99 @@ export default function ApplicationForm({ onSuccess }) {
       return undefined;
     }
 
-    const onUpdate = (event) => {
-      if (!event.target?.name) {
+    const isComposing = (element, event) =>
+      Boolean(
+        event?.isComposing ||
+          element?.composing ||
+          (typeof element?.isComposing === 'boolean' && element.isComposing),
+      );
+
+    const onFocusOut = (event) => {
+      const target = event.target;
+      if (!target?.name || isComposing(target, event)) {
         return;
       }
 
-      revalidateIfAttempted();
+      const related = event.relatedTarget;
+      if (
+        related instanceof HTMLInputElement &&
+        related.type === 'radio' &&
+        related.name === target.name
+      ) {
+        return;
+      }
+
+      updateFieldError(target.name);
     };
 
-    form.addEventListener('input', onUpdate, true);
-    form.addEventListener('change', onUpdate, true);
+    const onInput = (event) => {
+      const name = event.target?.name;
+      if (!name) {
+        return;
+      }
+
+      if (!submitAttemptedRef.current && !errorsRef.current[name]) {
+        return;
+      }
+
+      updateFieldError(name);
+    };
+
+    form.addEventListener('focusout', onFocusOut);
+    form.addEventListener('input', onInput, true);
 
     return () => {
-      form.removeEventListener('input', onUpdate, true);
-      form.removeEventListener('change', onUpdate, true);
+      form.removeEventListener('focusout', onFocusOut);
+      form.removeEventListener('input', onInput, true);
     };
-  }, [revalidateIfAttempted]);
+  }, [updateFieldError]);
 
   const handlePositionChange = useCallback(
     (event) => {
       saveMountedFormCache(formRef.current);
       const nextPosition = event.target.value;
+      positionRef.current = nextPosition;
       setPosition(nextPosition);
       trackPositionSelected(nextPosition);
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          revalidateIfAttempted(nextPosition);
-        });
+      setErrors((prev) => {
+        const next = { ...prev };
+        for (const key of Object.keys(next)) {
+          if (
+            (key.startsWith('pd_') && nextPosition !== 'PD') ||
+            (key.startsWith('mkt_') && nextPosition !== '홍보마케터') ||
+            (key.startsWith('des_') && nextPosition !== '디자이너')
+          ) {
+            delete next[key];
+          }
+        }
+        delete next.position;
+        return next;
       });
+
+      if (submitAttemptedRef.current) {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            const data = readFormData(formRef.current);
+            data.position = nextPosition;
+            setErrors(validateApplication(data));
+          });
+        });
+      }
     },
-    [revalidateIfAttempted],
+    [],
   );
+
+  const handleCommonUserToggle = useCallback((nextOpen) => {
+    if (!nextOpen) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollElementIntoView(commonFieldsRef.current);
+      });
+    });
+  }, []);
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();
@@ -379,23 +457,21 @@ export default function ApplicationForm({ onSuccess }) {
         noValidate
         autoComplete="off"
       >
+        <RecruitmentNotice />
         <Disclosure
           ref={commonDisclosureRef}
           sectionRef={setSectionRef('common')}
           dataSection="common"
           sectionName="common"
           title="기본 정보"
-          closedHint={position ? `지원분야 ${position}` : undefined}
-          closedAction="변경"
+          closedHint="이름, 생년월일, 거주지, 연락처 등"
+          closedAction="수정"
           showTrigger={Boolean(position)}
+          onUserToggle={handleCommonUserToggle}
         >
-          <RecruitmentNotice />
-          <CommonFields
-            defaults={defaults}
-            errors={errors}
-            position={position}
-            onPositionChange={handlePositionChange}
-          />
+          <div ref={commonFieldsRef} className="scroll-mt-6">
+            <CommonFields defaults={defaults} errors={errors} />
+          </div>
         </Disclosure>
 
         <div
@@ -403,6 +479,15 @@ export default function ApplicationForm({ onSuccess }) {
           id="form-position-questions"
           className="scroll-mt-6 space-y-6 sm:space-y-8"
         >
+          <RadioGroup
+            name="position"
+            label="지원분야"
+            required
+            options={POSITIONS}
+            value={position}
+            error={errors.position?.message}
+            onChange={handlePositionChange}
+          />
         {position === 'PD' && (
           <PositionSection
             sectionRef={setSectionRef('pd')}
@@ -510,11 +595,11 @@ export default function ApplicationForm({ onSuccess }) {
               error={errors.des_challenge?.message}
             />
 
-            <TextInput
+            <TextAreaInput
               id="des_portfolio_url"
               label="디자이너 포트폴리오 제출"
               required
-              placeholder="포트폴리오 링크를 적어 주세요"
+              placeholder="포트폴리오 링크를 적어 주세요. 여러 개면 줄바꿈으로 구분해 주세요"
               defaultValue={defaults.des_portfolio_url}
               error={errors.des_portfolio_url?.message}
             />

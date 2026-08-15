@@ -41,12 +41,21 @@ button {
   font-family: inherit;
 }
 
-input,
+input:not([type='checkbox']):not([type='radio']),
 textarea,
 select {
   font-size: 16px;
   touch-action: manipulation;
   overflow-anchor: none;
+}
+
+input:not([type='checkbox']):not([type='radio']) {
+  line-height: 20px;
+}
+
+textarea {
+  line-height: 24px;
+  field-sizing: fixed;
 }
 
 button.touch-manipulation {

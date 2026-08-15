@@ -138,6 +138,14 @@ function setOptional(errors, data, id) {
   }
 }
 
+export function getFieldError(data, fieldName) {
+  if (!fieldName) {
+    return undefined;
+  }
+
+  return validateApplication(data)[fieldName];
+}
+
 export function validateApplication(data) {
   const errors = {};
 

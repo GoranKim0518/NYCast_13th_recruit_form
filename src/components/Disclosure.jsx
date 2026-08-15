@@ -14,6 +14,7 @@ export default function Disclosure({
   showTrigger = true,
   defaultOpen = true,
   panelClassName,
+  onUserToggle,
   children,
 }) {
   const isOpenRef = useRef(!showTrigger || defaultOpen);
@@ -55,7 +56,9 @@ export default function Disclosure({
   }, [setOpen, showTrigger]);
 
   const handleUserToggle = () => {
-    setOpen(!isOpenRef.current, 'user');
+    const nextOpen = !isOpenRef.current;
+    setOpen(nextOpen, 'user');
+    onUserToggle?.(nextOpen);
   };
 
   const collapsed = showTrigger && !isOpen;
