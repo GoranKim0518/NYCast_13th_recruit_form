@@ -21,50 +21,51 @@ import {
   validateApplication,
 } from '../utils/formConfig';
 import { scrollElementIntoView } from '../utils/scroll';
-import { RECRUITMENT_INFO } from '../constants/recruitmentInfo';
 import Disclosure from './Disclosure';
 import FormLayout from './FormLayout';
 import RadioGroup from './RadioGroup';
 import RecruitmentNotice from './RecruitmentNotice';
 import TextInput, { TextAreaInput } from './TextInput';
 
-const POSITION_ROLE_ID = {
-  PD: 'pd',
-  홍보마케터: 'mkt',
-  디자이너: 'des',
+const POSITION_SUMMARY = {
+  PD: '노원을 홍보하기 위한 영상 프로그램을 기획, 촬영, 송출합니다.',
+  홍보마케터: '노원을 홍보하기 위한 프로젝트를 기획하고 집행합니다.',
+  디자이너: (
+    <>
+      <p>
+        디자이너 분야는 면접 없이{' '}
+        <strong className="font-semibold text-gray-900">
+          서류 + 포트폴리오로만 합/불이 결정
+        </strong>
+        됩니다.
+      </p>
+      <p className="mt-2">
+        본인의 경력사항을 담은{' '}
+        <strong className="font-semibold text-gray-900">
+          포트폴리오를 필수로 제출
+        </strong>
+        해주세요!
+      </p>
+    </>
+  ),
 };
 
-const ROLE_BY_ID = Object.fromEntries(
-  RECRUITMENT_INFO.section2.roles.map((role) => [role.id, role]),
-);
-
-function RoleTasks({ position }) {
-  const role = ROLE_BY_ID[POSITION_ROLE_ID[position]];
-  if (!role) {
-    return null;
-  }
-
-  return (
-    <ul className="space-y-1 text-sm leading-relaxed text-gray-600">
-      {role.tasks.map((task) => (
-        <li key={task}>{task}</li>
-      ))}
-    </ul>
-  );
-}
-
 function PositionSection({ sectionRef, dataSection, title, position, children }) {
+  const summary = POSITION_SUMMARY[position];
+
   return (
     <div
       ref={sectionRef}
       data-section={dataSection}
-      className="min-w-0 space-y-6 border-t border-gray-200 pt-8 sm:space-y-8"
+      className="min-w-0 scroll-mt-6 space-y-6 border-t border-gray-200 pt-8 sm:space-y-8"
     >
       <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 sm:px-5">
         <h2 className="text-lg font-bold text-gray-900">{title}</h2>
-        <div className="mt-2">
-          <RoleTasks position={position} />
-        </div>
+        {summary && (
+          <div className="mt-2 text-sm leading-relaxed text-gray-600 sm:text-base">
+            {summary}
+          </div>
+        )}
       </div>
       {children}
     </div>
@@ -114,8 +115,7 @@ function CommonFields({ defaults, errors, position, onPositionChange }) {
         error={errors.residence?.message}
       />
 
-      <TextInput
-        maxLength={100}
+      <TextAreaInput
         id="activity_location"
         label="활동하는 곳"
         required
@@ -143,6 +143,15 @@ function CommonFields({ defaults, errors, position, onPositionChange }) {
         error={errors.email?.message}
       />
 
+      <TextAreaInput
+        id="inspiration_source"
+        label="평소 새로운 아이디어나 기획, 디자인의 영감은 주로 어디서 얻으시나요?"
+        required
+        placeholder="영감을 얻는 경로, 매체 등을 자유롭게 작성해 주세요"
+        defaultValue={defaults.inspiration_source}
+        error={errors.inspiration_source?.message}
+      />
+
       <RadioGroup
         name="position"
         label="지원분야"
@@ -162,10 +171,10 @@ function PositionClosingFields({ prefix, defaults, errors }) {
 
   return (
     <>
-      <TextInput
+      <TextAreaInput
         id={commentId}
         label="마무리 한마디"
-        placeholder="하고 싶은 말을 자유롭게 작성해 주세요."
+        placeholder="내용을 자유롭게 작성해 주세요"
         defaultValue={defaults[commentId]}
         error={errors[commentId]?.message}
       />
@@ -173,7 +182,7 @@ function PositionClosingFields({ prefix, defaults, errors }) {
         id={inflowId}
         label="유입 경로"
         required
-        placeholder="인스타그램, 지인 추천, 학교 공지 등"
+        placeholder="인스타그램, 에브리타임, 캠퍼스픽 등"
         defaultValue={defaults[inflowId]}
         error={errors[inflowId]?.message}
       />
@@ -229,7 +238,16 @@ export default function ApplicationForm({ onSuccess }) {
     const shouldScroll = !skipAutoScrollRef.current;
     if (shouldScroll) {
       commonDisclosureRef.current?.setOpen(false, 'position_selected');
-      scrollElementIntoView(nextStepRef.current);
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+
+      const target = nextStepRef.current;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollElementIntoView(target);
+        });
+      });
     }
 
     skipAutoScrollRef.current = false;
@@ -312,7 +330,7 @@ export default function ApplicationForm({ onSuccess }) {
           sectionRef={setSectionRef('common')}
           dataSection="common"
           sectionName="common"
-          title="공통 정보"
+          title="기본 정보"
           closedHint={position ? `지원분야 ${position}` : undefined}
           closedAction="변경"
           showTrigger={Boolean(position)}
@@ -331,15 +349,6 @@ export default function ApplicationForm({ onSuccess }) {
           id="form-position-questions"
           className="scroll-mt-6 space-y-6 sm:space-y-8"
         >
-          <TextAreaInput
-            id="inspiration_source"
-            label="[공통] 평소 새로운 아이디어나 기획, 디자인의 영감은 주로 어디서 얻으시나요?"
-            required
-            placeholder="영감을 얻는 경로, 매체 등을 자유롭게 작성해 주세요."
-            defaultValue={defaults.inspiration_source}
-            error={errors.inspiration_source?.message}
-          />
-
         {position === 'PD' && (
           <PositionSection
             sectionRef={setSectionRef('pd')}
@@ -350,23 +359,25 @@ export default function ApplicationForm({ onSuccess }) {
             <TextAreaInput
               id="pd_strategy"
               label="노원유쓰캐스트의 콘텐츠를 더 알리기 위한 홍보 전략/개선점과 그 이유를 함께 작성해 주세요."
-              placeholder="전략 및 개선점을 작성해 주세요."
+              required
+              placeholder="전략 및 개선점을 작성해 주세요"
               defaultValue={defaults.pd_strategy}
               error={errors.pd_strategy?.message}
             />
 
-            <TextInput
+            <TextAreaInput
               id="pd_idea"
               label="'노원구'를 기반으로 만들어보고 싶은 영상 콘텐츠 프로그램 아이디어"
               required
-              placeholder="프로그램 아이디어를 작성해 주세요."
+              placeholder="프로그램 아이디어를 작성해 주세요"
               defaultValue={defaults.pd_idea}
               error={errors.pd_idea?.message}
             />
 
-            <TextInput
+            <TextAreaInput
               id="pd_tools"
               label="사용 가능한 툴과 실력을 모두 적어주세요"
+              required
               placeholder="ex. 프리미어프로 / 상"
               defaultValue={defaults.pd_tools}
               error={errors.pd_tools?.message}
@@ -375,7 +386,7 @@ export default function ApplicationForm({ onSuccess }) {
             <TextAreaInput
               id="pd_experience"
               label="콘텐츠 제작 및 관련 경력"
-              placeholder="관련 경력이나 활동 경험을 작성해 주세요."
+              placeholder="관련 경력이나 활동 경험을 작성해 주세요"
               defaultValue={defaults.pd_experience}
               error={errors.pd_experience?.message}
             />
@@ -397,15 +408,17 @@ export default function ApplicationForm({ onSuccess }) {
           >
             <TextAreaInput
               id="mkt_strategy"
-              label="노원유쓰캐스트의 콘텐츠를 더 알리기 위한 본인만의 홍보 전략/개선점과 그 이유를 함께 작성해 주세요."
-              placeholder="전략 및 개선점을 작성해 주세요."
+              label="노원유쓰캐스트의 콘텐츠를 더 알리기 위한 홍보 전략/개선점과 그 이유를 함께 작성해 주세요."
+              required
+              placeholder="전략 및 개선점을 작성해 주세요"
               defaultValue={defaults.mkt_strategy}
               error={errors.mkt_strategy?.message}
             />
 
-            <TextInput
+            <TextAreaInput
               id="mkt_tools"
               label="사용 가능한 툴과 실력을 모두 적어주세요"
+              required
               placeholder="ex. 포토샵 / 상, GTQ 1급"
               defaultValue={defaults.mkt_tools}
               error={errors.mkt_tools?.message}
@@ -414,7 +427,7 @@ export default function ApplicationForm({ onSuccess }) {
             <TextAreaInput
               id="mkt_experience"
               label="콘텐츠 제작 및 홍보 관련 경력"
-              placeholder="관련 경력이나 활동 경험을 작성해 주세요."
+              placeholder="관련 경력이나 활동 경험을 작성해 주세요"
               defaultValue={defaults.mkt_experience}
               error={errors.mkt_experience?.message}
             />
@@ -434,10 +447,11 @@ export default function ApplicationForm({ onSuccess }) {
             title="디자이너 지원 항목"
             position="디자이너"
           >
-            <TextInput
+            <TextAreaInput
               id="des_challenge"
               label="노원유쓰캐스트에서 가장 도전해보고 싶은 디자인 작업은 무엇인가요?"
-              placeholder="브랜딩, SNS 콘텐츠, 영상 그래픽 등"
+              required
+              placeholder="ex. 실물 굿즈 디자인 / 노리 캐릭터를 활용한 스티커 세트"
               defaultValue={defaults.des_challenge}
               error={errors.des_challenge?.message}
             />
@@ -445,7 +459,8 @@ export default function ApplicationForm({ onSuccess }) {
             <TextInput
               id="des_portfolio_url"
               label="디자이너 포트폴리오 제출"
-              placeholder="있으면 링크를 적어 주세요"
+              required
+              placeholder="포트폴리오 링크를 적어 주세요"
               defaultValue={defaults.des_portfolio_url}
               error={errors.des_portfolio_url?.message}
             />

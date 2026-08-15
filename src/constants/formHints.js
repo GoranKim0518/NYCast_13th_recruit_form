@@ -14,12 +14,9 @@ function mailLink(email = CONTACT_EMAIL) {
   return `<a href="mailto:${email}">${email}</a>`;
 }
 
-const STRATEGY_HINT =
-  '<i>💡 정답이 있는 질문이 아니니, 평소 느꼈던 점이나 재미있는 아이디어를 자유롭게 적어주시면 됩니다!</i>';
-
 const SOFTWARE_LIST = `<p>(포토샵, 일러스트레이터, 프리미어, 파이널컷, 피그마, CapCut, Vllo, 나노바나나, 미드저니, 클링, 베오)</p>`;
 
-const STRATEGY_HTML = `<p>노원유쓰캐스트의 콘텐츠를 더 많은 사람들에게 전달하기 위한 <b>본인만의 홍보 전략/개선점과 그 이유</b>를 자유롭게 제안해 주세요.</p>
+const STRATEGY_HTML = `<p>아래는 노원유쓰캐스트의 콘텐츠입니다.</p>
 <p>인스타그램: ${extLink(INSTAGRAM_URL)}</p>
 <p>유튜브: ${extLink(YOUTUBE_URL)}</p>
 <ul>
@@ -31,7 +28,8 @@ const STRATEGY_HTML = `<p>노원유쓰캐스트의 콘텐츠를 더 많은 사�
       <li><b>콘텐츠 개선:</b> 채널 톤앤매너, 썸네일/제목 스타일, 타겟 맞춤형 기획 등</li>
     </ul>
   </li>
-</ul>`;
+</ul>
+<p>💡 정답이 있는 질문이 아니니, 평소 느꼈던 점이나 재미있는 아이디어를 자유롭게 적어주세요!</p>`;
 
 const PORTFOLIO_CHANNEL_EXAMPLES =
   '개인 블로그, 인스타그램, 유튜브, 노션, 구글 드라이브, 대외활동 포트폴리오 링크 등';
@@ -48,7 +46,7 @@ const PORTFOLIO_SUBMIT_HTML = `<ul>
     ✉️ <strong>메일 제출 (온라인 공유가 어려운 첨부 파일)</strong>
     <ul>
       <li>제출처: ${mailLink()}</li>
-      <li>메일 제목 형식: <strong>[노원유쓰캐스트 13기 지원]</strong> 지원자 이름_포트폴리오</li>
+      <li>메일 제목 형식: <strong>[노원유쓰캐스트 13기 지원] 지원자 이름_포트폴리오</strong></li>
     </ul>
   </li>
 </ul>`;
@@ -65,17 +63,15 @@ const INFLOW_HINT =
 export const FIELD_HINTS = {
   academic_info:
     '현재 학생이 아닌 경우: 마지막 학교명과 전공 작성 / 직장인의 경우:  회사명과 직무 작성',
-  residence: '거주지 주소를 동까지만 작성해주세요',
+  residence: '거주지 주소를 동까지만 작성해주세요.',
   activity_location:
     '학교나 학원, 회사 등 가장 많은 시간을 보내는 곳',
   phone:
-    '000-0000-0000 형식으로 입력 / 입력하신 내용으로 서류 합격자 발표 연락드립니다. 정확하게 작성해주세요',
+    '입력하신 내용으로 서류 합격자 발표 연락드립니다. 정확하게 작성해주세요.',
   email:
-    '입력하신 내용으로 서류 합격자 발표 연락드립니다. 정확하게 작성해주세요',
+    '입력하신 내용으로 서류 합격자 발표 연락드립니다. 정확하게 작성해주세요.',
   inspiration_source:
     '영감을 주는 레퍼런스 채널(인스타그램, 핀터레스트, 유튜브 등), 책, 음악, 공간, 혹은 자신만의 일상적인 루틴이 있다면 들려주세요.',
-  pd_strategy: STRATEGY_HINT,
-  mkt_strategy: STRATEGY_HINT,
   pd_inflow_channel: INFLOW_HINT,
   mkt_inflow_channel: INFLOW_HINT,
   des_inflow_channel: INFLOW_HINT,
@@ -102,8 +98,8 @@ export const FIELD_HTML = {
     <li><strong>실물 굿즈 디자인</strong> (스티커, 키링, 마스킹테이프 등 홍보용 굿즈)</li>
   </ul>
   <p>📌 <strong>작성 안내</strong> 위 목록 중 <strong>가장 경험해보고 싶은 디자인 유형 1가지</strong>를 선택하고,
-  해당 유형에서 어떤 디자인(콘셉트/아이디어)을 구현해보고 싶은지 자유롭게 적어주세요.</p>`,
-  des_portfolio_url: `<p><strong>[첫페이지에 다룰 줄 아는 툴, 활용 능력(상/중/하), 활동이력 명시 필수]</strong></p>
+  <b>해당 유형에서 어떤 디자인(콘셉트/아이디어)을 구현해보고 싶은지</b> 자유롭게 적어주세요.</p>`,
+  des_portfolio_url: `<p><strong>[첫 페이지에 다룰 줄 아는 툴, 활용 능력(상/중/하), 활동이력 명시 필수]</strong></p>
   <p>다양한 미디어의 <strong>디자인과</strong> 관련된 경험이 있다면 공유해 주세요!</p>
   ${PORTFOLIO_SUBMIT_HTML}`,
 };

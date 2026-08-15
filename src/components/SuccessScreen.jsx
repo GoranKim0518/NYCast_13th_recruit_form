@@ -30,8 +30,7 @@ export default function SuccessScreen() {
           지원이 완료되었습니다
         </h1>
         <p className="mt-4 max-w-md text-base leading-relaxed text-gray-600">
-          노원유쓰캐스트 13기 신입 국원 모집에 지원해 주셔서 감사합니다. 면접
-          때 만나뵐 수 있으면 좋겠습니다!
+          노원유쓰캐스트 13기 신입 국원 모집에 지원해 주셔서 감사합니다.
         </p>
       </div>
     </FormLayout>

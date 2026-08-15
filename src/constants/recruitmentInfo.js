@@ -45,14 +45,14 @@ export const RECRUITMENT_INFO = {
           },
         ],
       },
-      footerNotice: '* 표시는 필수 질문임',
+      footerNotice: '* 표시는 필수 질문',
     },
   
     section2: {
       title: '신입국원 모집 상세요강',
       eligibility: {
         title: '✔️ 모집 대상',
-        note: '*인스타그램 부서 소개 카드뉴스를 확인해주세요!',
+        note: '인스타그램 부서 소개 카드뉴스를 확인해주세요!',
         subtitle: '등 노원구와 연결고리가 있는 모든 20대(07년생 이상)',
         items: [
           '·노원구 소재 대학교 학생',
@@ -92,18 +92,18 @@ export const RECRUITMENT_INFO = {
         duration: '🗓️ 활동 기간은 9개월 (2027/6/30 까지)입니다',
         timeline: [
           {
-            label: '지원기간',
+            label: '지원 기간',
             value: '~ 2026/9/9(수) 20:00',
             highlight: false,
           },
           {
-            label: '서류 합격자 발표(개별 연락)',
+            label: '서류 합격자 발표 (개별 연락)',
             value: '2026/9/10(목)',
             highlight: false,
           },
           {
-            label: '면접(15시~17시 중 진행 예정)',
-            note: '❗️서류전형 합격자 필참',
+            label: '면접 (15시~17시 중 진행 예정)',
+            note: '❗️서류전형 합격자 필참 (20분 소요 예정)',
             value: '2026/9/12(토)',
             highlight: true,
           },

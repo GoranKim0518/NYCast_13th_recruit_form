@@ -52,9 +52,9 @@ export const COMMON_REQUIRED_FIELDS = [
 ];
 
 export const POSITION_REQUIRED_FIELDS = {
-  PD: ['pd_idea', 'pd_inflow_channel'],
-  홍보마케터: ['mkt_inflow_channel'],
-  디자이너: ['des_inflow_channel'],
+  PD: ['pd_strategy', 'pd_idea', 'pd_tools', 'pd_inflow_channel'],
+  홍보마케터: ['mkt_strategy', 'mkt_tools', 'mkt_inflow_channel'],
+  디자이너: ['des_challenge', 'des_portfolio_url', 'des_inflow_channel'],
 };
 
 export function getFieldSection(fieldName) {
@@ -89,10 +89,7 @@ export function getFirstErrorField(errors, position) {
 }
 
 export function isCollapsedCommonField(fieldName) {
-  return (
-    FIELD_SECTIONS.common.includes(fieldName) &&
-    fieldName !== 'inspiration_source'
-  );
+  return FIELD_SECTIONS.common.includes(fieldName);
 }
 
 export function countCompletedRequiredFields(values) {

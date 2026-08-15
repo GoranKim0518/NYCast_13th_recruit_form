@@ -59,20 +59,20 @@ export function buildSubmissionPayload(data) {
   };
 
   if (data.position === 'PD') {
-    payload.pd_strategy = data.pd_strategy || null;
+    payload.pd_strategy = data.pd_strategy;
     payload.pd_idea = data.pd_idea;
-    payload.pd_tools = data.pd_tools || null;
+    payload.pd_tools = data.pd_tools;
     payload.pd_experience = data.pd_experience || null;
     payload.pd_comment = data.pd_comment || null;
     payload.pd_inflow_channel = data.pd_inflow_channel;
   } else if (data.position === '홍보마케터') {
-    payload.mkt_strategy = data.mkt_strategy || null;
-    payload.mkt_tools = data.mkt_tools || null;
+    payload.mkt_strategy = data.mkt_strategy;
+    payload.mkt_tools = data.mkt_tools;
     payload.mkt_experience = data.mkt_experience || null;
     payload.mkt_comment = data.mkt_comment || null;
     payload.mkt_inflow_channel = data.mkt_inflow_channel;
   } else if (data.position === '디자이너') {
-    payload.des_challenge = data.des_challenge || null;
+    payload.des_challenge = data.des_challenge;
     payload.des_portfolio_url = data.des_portfolio_url;
     payload.des_comment = data.des_comment || null;
     payload.des_inflow_channel = data.des_inflow_channel;
@@ -166,21 +166,26 @@ export function validateApplication(data) {
   setRequired(errors, data, 'inspiration_source', '영감의 출처를 입력해 주세요.');
 
   if (data.position === 'PD') {
-    setOptional(errors, data, 'pd_strategy');
+    setRequired(errors, data, 'pd_strategy', '홍보 전략/개선점을 입력해 주세요.');
     setRequired(errors, data, 'pd_idea', '프로그램 아이디어를 입력해 주세요.');
-    setOptional(errors, data, 'pd_tools');
+    setRequired(errors, data, 'pd_tools', '사용 가능한 툴을 입력해 주세요.');
     setOptional(errors, data, 'pd_experience');
     setOptional(errors, data, 'pd_comment');
     setRequired(errors, data, 'pd_inflow_channel', '유입 경로를 입력해 주세요.');
   } else if (data.position === '홍보마케터') {
-    setOptional(errors, data, 'mkt_strategy');
-    setOptional(errors, data, 'mkt_tools');
+    setRequired(errors, data, 'mkt_strategy', '홍보 전략/개선점을 입력해 주세요.');
+    setRequired(errors, data, 'mkt_tools', '사용 가능한 툴을 입력해 주세요.');
     setOptional(errors, data, 'mkt_experience');
     setOptional(errors, data, 'mkt_comment');
     setRequired(errors, data, 'mkt_inflow_channel', '유입 경로를 입력해 주세요.');
   } else if (data.position === '디자이너') {
-    setOptional(errors, data, 'des_challenge');
-    setOptional(errors, data, 'des_portfolio_url');
+    setRequired(
+      errors,
+      data,
+      'des_challenge',
+      '도전해보고 싶은 디자인 작업을 입력해 주세요.',
+    );
+    setRequired(errors, data, 'des_portfolio_url', '포트폴리오를 제출해 주세요.');
     setOptional(errors, data, 'des_comment');
     setRequired(errors, data, 'des_inflow_channel', '유입 경로를 입력해 주세요.');
   }

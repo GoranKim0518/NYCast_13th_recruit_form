@@ -7,8 +7,19 @@ export function scrollElementIntoView(element, { block = 'start' } = {}) {
     return;
   }
 
-  element.scrollIntoView({
-    behavior: prefersReducedMotion() ? 'auto' : 'smooth',
-    block,
+  const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
+
+  if (block === 'center') {
+    element.scrollIntoView({ behavior, block });
+    return;
+  }
+
+  const offset = 24;
+  const top =
+    element.getBoundingClientRect().top + window.scrollY - offset;
+
+  window.scrollTo({
+    top: Math.max(0, top),
+    behavior,
   });
 }
