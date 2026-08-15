@@ -76,7 +76,6 @@ function CommonFields({ defaults, errors, position, onPositionChange }) {
   return (
     <div className="space-y-6 sm:space-y-8">
       <TextInput
-        maxLength={20}
         id="name"
         label="이름"
         required
@@ -86,7 +85,6 @@ function CommonFields({ defaults, errors, position, onPositionChange }) {
       />
 
       <TextInput
-        maxLength={8}
         id="birth_date"
         label="생년월일(YYYYMMDD)"
         required
@@ -96,7 +94,6 @@ function CommonFields({ defaults, errors, position, onPositionChange }) {
       />
 
       <TextInput
-        maxLength={150}
         id="academic_info"
         label="학교명/전공학과/학번(입학년도)"
         required
@@ -106,7 +103,6 @@ function CommonFields({ defaults, errors, position, onPositionChange }) {
       />
 
       <TextInput
-        maxLength={150}
         id="residence"
         label="거주지"
         required
@@ -125,7 +121,6 @@ function CommonFields({ defaults, errors, position, onPositionChange }) {
       />
 
       <TextInput
-        maxLength={13}
         id="phone"
         label="연락처"
         required
@@ -200,6 +195,7 @@ export default function ApplicationForm({ onSuccess }) {
   const commonDisclosureRef = useRef(null);
   const nextStepRef = useRef(null);
   const skipAutoScrollRef = useRef(true);
+  const submitAttemptedRef = useRef(false);
 
   const [position, setPosition] = useState(defaults.position);
   const [errors, setErrors] = useState({});
@@ -256,18 +252,60 @@ export default function ApplicationForm({ onSuccess }) {
     skipAutoScrollRef.current = false;
   }, [position]);
 
+  const revalidateIfAttempted = useCallback(
+    (nextPosition = position) => {
+      if (!submitAttemptedRef.current || !formRef.current) {
+        return;
+      }
+
+      const data = readFormData(formRef.current);
+      data.position = nextPosition || data.position;
+      setErrors(validateApplication(data));
+    },
+    [position],
+  );
+
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) {
+      return undefined;
+    }
+
+    const onUpdate = (event) => {
+      if (!event.target?.name) {
+        return;
+      }
+
+      revalidateIfAttempted();
+    };
+
+    form.addEventListener('input', onUpdate, true);
+    form.addEventListener('change', onUpdate, true);
+
+    return () => {
+      form.removeEventListener('input', onUpdate, true);
+      form.removeEventListener('change', onUpdate, true);
+    };
+  }, [revalidateIfAttempted]);
+
   const handlePositionChange = useCallback(
     (event) => {
       saveMountedFormCache(formRef.current);
       const nextPosition = event.target.value;
       setPosition(nextPosition);
       trackPositionSelected(nextPosition);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          revalidateIfAttempted(nextPosition);
+        });
+      });
     },
-    [],
+    [revalidateIfAttempted],
   );
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();
+    submitAttemptedRef.current = true;
 
     const rawData = readFormData(event.currentTarget);
     rawData.position = position;

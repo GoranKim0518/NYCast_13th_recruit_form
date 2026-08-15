@@ -25,7 +25,11 @@ export default function RadioGroup({
           <label
             key={option}
             htmlFor={`${name}-${option}`}
-            className="flex min-h-12 cursor-default items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 transition-colors touch-manipulation [@media(hover:hover)_and_(pointer:fine)]:cursor-pointer [@media(hover:hover)]:hover:border-violet-300 has-[:checked]:border-violet-500 has-[:checked]:bg-violet-50"
+            className={`flex min-h-12 cursor-default items-center gap-3 rounded-lg border px-4 py-3 transition-colors touch-manipulation [@media(hover:hover)_and_(pointer:fine)]:cursor-pointer has-[:checked]:border-violet-500 has-[:checked]:bg-violet-50 ${
+              error
+                ? 'border-red-500'
+                : 'border-gray-200 [@media(hover:hover)]:hover:border-violet-300'
+            }`}
           >
             <input
               id={`${name}-${option}`}

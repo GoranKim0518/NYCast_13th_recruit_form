@@ -1,7 +1,9 @@
 export const POSITIONS = ['PD', '홍보마케터', '디자이너'];
 
+export const REQUIRED_MESSAGE = '필수 질문입니다.';
 export const PHONE_REGEX = /^010-\d{4}-\d{4}$/;
 export const EMAIL_REGEX = /@/;
+export const BIRTH_DATE_REGEX = /^\d{8}$/;
 
 export const defaultValues = {
   name: '',
@@ -113,9 +115,9 @@ function htmlMessage(value) {
   return null;
 }
 
-function setRequired(errors, data, id, message) {
+function setRequired(errors, data, id) {
   if (!data[id] || !String(data[id]).trim()) {
-    errors[id] = { message, type: 'required' };
+    errors[id] = { message: REQUIRED_MESSAGE, type: 'required' };
     return;
   }
 
@@ -139,12 +141,24 @@ function setOptional(errors, data, id) {
 export function validateApplication(data) {
   const errors = {};
 
-  setRequired(errors, data, 'name', '이름을 입력해 주세요.');
-  setRequired(errors, data, 'birth_date', '생년월일을 입력해 주세요.');
-  setRequired(errors, data, 'academic_info', '학교 정보를 입력해 주세요.');
-  setRequired(errors, data, 'residence', '거주지를 입력해 주세요.');
-  setRequired(errors, data, 'activity_location', '활동하는 곳을 입력해 주세요.');
-  setRequired(errors, data, 'phone', '연락처를 입력해 주세요.');
+  setRequired(errors, data, 'name');
+  setRequired(errors, data, 'birth_date');
+
+  if (
+    !errors.birth_date &&
+    data.birth_date &&
+    !BIRTH_DATE_REGEX.test(data.birth_date.trim())
+  ) {
+    errors.birth_date = {
+      message: 'YYYYMMDD 8자리로 입력해 주세요.',
+      type: 'pattern',
+    };
+  }
+
+  setRequired(errors, data, 'academic_info');
+  setRequired(errors, data, 'residence');
+  setRequired(errors, data, 'activity_location');
+  setRequired(errors, data, 'phone');
 
   if (!errors.phone && data.phone && !PHONE_REGEX.test(data.phone.trim())) {
     errors.phone = {
@@ -153,41 +167,36 @@ export function validateApplication(data) {
     };
   }
 
-  setRequired(errors, data, 'email', '이메일을 입력해 주세요.');
+  setRequired(errors, data, 'email');
 
   if (!errors.email && data.email && !EMAIL_REGEX.test(data.email.trim())) {
     errors.email = {
-      message: '이메일 주소에 @가 포함되어야 합니다.',
+      message: '유효한 이메일 주소를 입력해 주세요.',
       type: 'pattern',
     };
   }
 
-  setRequired(errors, data, 'position', '지원분야를 선택해 주세요.');
-  setRequired(errors, data, 'inspiration_source', '영감의 출처를 입력해 주세요.');
+  setRequired(errors, data, 'inspiration_source');
+  setRequired(errors, data, 'position');
 
   if (data.position === 'PD') {
-    setRequired(errors, data, 'pd_strategy', '홍보 전략/개선점을 입력해 주세요.');
-    setRequired(errors, data, 'pd_idea', '프로그램 아이디어를 입력해 주세요.');
-    setRequired(errors, data, 'pd_tools', '사용 가능한 툴을 입력해 주세요.');
+    setRequired(errors, data, 'pd_strategy');
+    setRequired(errors, data, 'pd_idea');
+    setRequired(errors, data, 'pd_tools');
     setOptional(errors, data, 'pd_experience');
     setOptional(errors, data, 'pd_comment');
-    setRequired(errors, data, 'pd_inflow_channel', '유입 경로를 입력해 주세요.');
+    setRequired(errors, data, 'pd_inflow_channel');
   } else if (data.position === '홍보마케터') {
-    setRequired(errors, data, 'mkt_strategy', '홍보 전략/개선점을 입력해 주세요.');
-    setRequired(errors, data, 'mkt_tools', '사용 가능한 툴을 입력해 주세요.');
+    setRequired(errors, data, 'mkt_strategy');
+    setRequired(errors, data, 'mkt_tools');
     setOptional(errors, data, 'mkt_experience');
     setOptional(errors, data, 'mkt_comment');
-    setRequired(errors, data, 'mkt_inflow_channel', '유입 경로를 입력해 주세요.');
+    setRequired(errors, data, 'mkt_inflow_channel');
   } else if (data.position === '디자이너') {
-    setRequired(
-      errors,
-      data,
-      'des_challenge',
-      '도전해보고 싶은 디자인 작업을 입력해 주세요.',
-    );
-    setRequired(errors, data, 'des_portfolio_url', '포트폴리오를 제출해 주세요.');
+    setRequired(errors, data, 'des_challenge');
+    setRequired(errors, data, 'des_portfolio_url');
     setOptional(errors, data, 'des_comment');
-    setRequired(errors, data, 'des_inflow_channel', '유입 경로를 입력해 주세요.');
+    setRequired(errors, data, 'des_inflow_channel');
   }
 
   return errors;

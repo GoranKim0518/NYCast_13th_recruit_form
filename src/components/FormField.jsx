@@ -29,13 +29,13 @@ export default function FormField({
       <FormHtml html={html} id={guidanceId} />
       <FormHtml html={hint} className="form-hint" id={hintId} />
       {children}
-      <p
-        id={errorId}
-        className="min-h-5 text-sm text-red-600"
-        role={error ? 'alert' : undefined}
-      >
-        {error || '\u00a0'}
-      </p>
+      {error ? (
+        <p id={errorId} className="text-sm text-red-600" role="alert">
+          {error}
+        </p>
+      ) : (
+        <p id={errorId} className="sr-only" />
+      )}
     </div>
   );
 }
