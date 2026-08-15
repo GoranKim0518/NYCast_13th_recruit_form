@@ -599,7 +599,7 @@ export default function ApplicationForm({ onSuccess }) {
               id="des_portfolio_url"
               label="디자이너 포트폴리오 제출"
               required
-              placeholder="포트폴리오 링크를 적어 주세요. 여러 개면 줄바꿈으로 구분해 주세요"
+              placeholder="디자인 경험을 적어주세요"
               defaultValue={defaults.des_portfolio_url}
               error={errors.des_portfolio_url?.message}
             />
