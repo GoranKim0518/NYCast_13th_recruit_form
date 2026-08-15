@@ -31,14 +31,20 @@ export default function RadioGroup({
         {options.map((option) => (
           <label
             key={option}
-            htmlFor={`${name}-${option}`}
+            htmlFor={locked ? undefined : `${name}-${option}`}
+            onPointerDown={() => {
+              if (!locked) {
+                return;
+              }
+
+              onLockedSelect?.(option);
+            }}
             onClick={(event) => {
               if (!locked) {
                 return;
               }
 
               event.preventDefault();
-              onLockedSelect?.(option);
             }}
             className={`flex min-h-12 items-center gap-3 rounded-lg border px-4 py-3 transition-colors touch-manipulation has-[:checked]:border-violet-500 has-[:checked]:bg-violet-50 ${
               locked

@@ -47,7 +47,14 @@ export default function Disclosure({
     [sectionName],
   );
 
-  useImperativeHandle(ref, () => ({ setOpen }), [setOpen]);
+  useImperativeHandle(
+    ref,
+    () => ({
+      setOpen,
+      isOpen: () => isOpenRef.current,
+    }),
+    [setOpen],
+  );
 
   useLayoutEffect(() => {
     if (!showTrigger) {

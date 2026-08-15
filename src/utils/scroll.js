@@ -2,12 +2,16 @@ export function prefersReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-export function scrollElementIntoView(element, { block = 'start' } = {}) {
+export function scrollElementIntoView(
+  element,
+  { block = 'start', behavior: behaviorOverride } = {},
+) {
   if (!element) {
     return;
   }
 
-  const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
+  const behavior =
+    behaviorOverride ?? (prefersReducedMotion() ? 'auto' : 'smooth');
 
   if (block === 'center') {
     element.scrollIntoView({ behavior, block });

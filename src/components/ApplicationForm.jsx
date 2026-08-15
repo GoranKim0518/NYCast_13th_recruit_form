@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { useFormAnalytics } from '../hooks/useFormAnalytics';
 import { useFormCache } from '../hooks/useFormCache';
 import { sanitizeFormData } from '../lib/sanitize';
@@ -20,7 +21,6 @@ import {
   BASIC_INFO_FIRST_MESSAGE,
   getBasicInfoErrors,
   getFieldError,
-  isBasicInfoComplete,
   readFormData,
   validateApplication,
 } from '../utils/formConfig';
@@ -199,14 +199,12 @@ export default function ApplicationForm({ onSuccess }) {
   const submitAttemptedRef = useRef(false);
   const positionRef = useRef(defaults.position);
   const errorsRef = useRef({});
+  const lastBasicFieldRef = useRef('name');
 
   const [position, setPosition] = useState(defaults.position);
   const [errors, setErrors] = useState({});
   const [rootError, setRootError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [basicInfoReady, setBasicInfoReady] = useState(() =>
-    isBasicInfoComplete(defaults),
-  );
   errorsRef.current = errors;
 
   const getValues = useCallback((fieldName) => {
@@ -262,22 +260,6 @@ export default function ApplicationForm({ onSuccess }) {
   useEffect(() => {
     positionRef.current = position;
   }, [position]);
-
-  useEffect(() => {
-    if (!basicInfoReady) {
-      return;
-    }
-
-    setErrors((prev) => {
-      if (prev.position?.message !== BASIC_INFO_FIRST_MESSAGE) {
-        return prev;
-      }
-
-      const next = { ...prev };
-      delete next.position;
-      return next;
-    });
-  }, [basicInfoReady]);
 
   const updateFieldError = useCallback((fieldName, nextPosition) => {
     if (!fieldName || !formRef.current) {
@@ -347,64 +329,68 @@ export default function ApplicationForm({ onSuccess }) {
       updateFieldError(name);
     };
 
-    const syncBasicInfoReady = () => {
-      setBasicInfoReady(isBasicInfoComplete(readFormData(form)));
+    const onFocusIn = (event) => {
+      const name = event.target?.name;
+      if (name && isCollapsedCommonField(name)) {
+        lastBasicFieldRef.current = name;
+      }
     };
 
     form.addEventListener('focusout', onFocusOut);
+    form.addEventListener('focusin', onFocusIn);
     form.addEventListener('input', onInput, true);
-    form.addEventListener('input', syncBasicInfoReady, true);
-    form.addEventListener('change', syncBasicInfoReady, true);
-    syncBasicInfoReady();
 
     return () => {
       form.removeEventListener('focusout', onFocusOut);
+      form.removeEventListener('focusin', onFocusIn);
       form.removeEventListener('input', onInput, true);
-      form.removeEventListener('input', syncBasicInfoReady, true);
-      form.removeEventListener('change', syncBasicInfoReady, true);
     };
   }, [updateFieldError]);
 
   const revealFirstErrorField = useCallback((formErrors, currentPosition, reason) => {
-    const firstErrorField = getFirstErrorField(formErrors, currentPosition);
+    const preferred = lastBasicFieldRef.current;
+    const firstErrorField =
+      (preferred && formErrors[preferred] && preferred) ||
+      getFirstErrorField(formErrors, currentPosition);
     const form = formRef.current;
 
     if (!firstErrorField || !form) {
       return;
     }
 
-    if (isCollapsedCommonField(firstErrorField)) {
-      commonDisclosureRef.current?.setOpen(true, reason);
-    }
+    const needsOpen =
+      isCollapsedCommonField(firstErrorField) &&
+      commonDisclosureRef.current &&
+      !commonDisclosureRef.current.isOpen();
 
-    const reveal = () => {
-      const field = form.elements.namedItem(firstErrorField);
-      const element = field instanceof RadioNodeList ? field[0] : field;
-      if (element instanceof HTMLElement) {
-        element.focus();
-        scrollElementIntoView(element, { block: 'center' });
-      }
-    };
-
-    if (isCollapsedCommonField(firstErrorField)) {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(reveal);
+    if (needsOpen) {
+      flushSync(() => {
+        commonDisclosureRef.current?.setOpen(true, reason);
       });
-    } else {
-      reveal();
     }
+
+    const field = form.elements.namedItem(firstErrorField);
+    const element = field instanceof RadioNodeList ? field[0] : field;
+    if (!(element instanceof HTMLElement)) {
+      return;
+    }
+
+    element.focus({ preventScroll: true });
+    scrollElementIntoView(element, { block: 'center', behavior: 'auto' });
   }, []);
 
   const showBasicInfoGate = useCallback(
     (basicErrors) => {
-      setErrors((prev) => ({
-        ...prev,
-        ...basicErrors,
-        position: {
-          message: BASIC_INFO_FIRST_MESSAGE,
-          type: 'validate',
-        },
-      }));
+      flushSync(() => {
+        setErrors((prev) => ({
+          ...prev,
+          ...basicErrors,
+          position: {
+            message: BASIC_INFO_FIRST_MESSAGE,
+            type: 'validate',
+          },
+        }));
+      });
       revealFirstErrorField(basicErrors, '', 'basic_info_required');
     },
     [revealFirstErrorField],
@@ -447,11 +433,13 @@ export default function ApplicationForm({ onSuccess }) {
 
   const trySelectPosition = useCallback(
     (nextPosition) => {
-      const basicErrors = getBasicInfoErrors(readFormData(formRef.current));
+      if (!positionRef.current) {
+        const basicErrors = getBasicInfoErrors(readFormData(formRef.current));
 
-      if (Object.keys(basicErrors).length > 0) {
-        showBasicInfoGate(basicErrors);
-        return;
+        if (Object.keys(basicErrors).length > 0) {
+          showBasicInfoGate(basicErrors);
+          return;
+        }
       }
 
       selectPosition(nextPosition);
@@ -554,11 +542,10 @@ export default function ApplicationForm({ onSuccess }) {
             name="position"
             label="지원분야"
             required
-            hint={basicInfoReady ? undefined : BASIC_INFO_FIRST_MESSAGE}
+            hint={!position ? BASIC_INFO_FIRST_MESSAGE : undefined}
             options={POSITIONS}
             value={position}
             error={errors.position?.message}
-            locked={!basicInfoReady}
             onChange={handlePositionChange}
             onLockedSelect={trySelectPosition}
           />
