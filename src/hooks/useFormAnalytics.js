@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import {
+  ANALYTICS_ENABLED,
   trackFieldCompleted,
   trackFieldError,
   trackFormAbandon,
@@ -13,19 +14,42 @@ import {
   classifySubmitError,
   countCompletedRequiredFields,
   getFieldSection,
+  mapValidationErrorType,
 } from '../utils/formAnalyticsConfig';
+import { hasMeaningfulDraft } from '../lib/formCache';
+import { validateApplication } from '../utils/formConfig';
+
+function isFormControl(element) {
+  return (
+    element instanceof HTMLInputElement ||
+    element instanceof HTMLTextAreaElement
+  );
+}
+
+function isComposing(element, event) {
+  return Boolean(
+    event?.isComposing ||
+      element?.composing ||
+      (typeof element?.isComposing === 'boolean' && element.isComposing),
+  );
+}
 
 export function useFormAnalytics({
+  formRef,
   getValues,
   position,
 }) {
+  const viewedRef = useRef(false);
   const engagedRef = useRef(false);
   const submittedRef = useRef(false);
+  const abandonSentRef = useRef(false);
   const completedFieldsRef = useRef(new Set());
   const reachedSectionsRef = useRef(new Set());
   const lastFieldRef = useRef('');
   const lastSectionRef = useRef('common');
   const sectionRefs = useRef({});
+  const getValuesRef = useRef(getValues);
+  getValuesRef.current = getValues;
 
   const setSectionRef = useCallback((sectionName) => {
     return (node) => {
@@ -34,7 +58,10 @@ export function useFormAnalytics({
   }, []);
 
   useEffect(() => {
-    trackFormView();
+    if (ANALYTICS_ENABLED) {
+      viewedRef.current = true;
+      trackFormView();
+    }
   }, []);
 
   useEffect(() => {
@@ -70,19 +97,32 @@ export function useFormAnalytics({
   }, [position]);
 
   const sendAbandon = useCallback(() => {
-    if (!engagedRef.current || submittedRef.current) {
+    if (
+      !ANALYTICS_ENABLED ||
+      !viewedRef.current ||
+      submittedRef.current ||
+      abandonSentRef.current
+    ) {
       return;
     }
 
-    const values = getValues();
+    abandonSentRef.current = true;
+
+    const values = getValuesRef.current();
+    const fieldsCompletedCount = countCompletedRequiredFields(values);
+    const abandonType =
+      fieldsCompletedCount > 0 || hasMeaningfulDraft(values)
+        ? 'partial'
+        : 'empty';
 
     trackFormAbandon({
       lastSection: lastSectionRef.current,
       lastField: lastFieldRef.current || '(none)',
-      fieldsCompletedCount: countCompletedRequiredFields(values),
+      fieldsCompletedCount,
       positionSelected: values.position,
+      abandonType,
     });
-  }, [getValues]);
+  }, []);
 
   useEffect(() => {
     const handlePageHide = (event) => {
@@ -100,17 +140,32 @@ export function useFormAnalytics({
     };
   }, [sendAbandon]);
 
-  const onFieldBlur = useCallback(
-    (fieldName) => {
+  useEffect(() => {
+    if (!ANALYTICS_ENABLED) {
+      return undefined;
+    }
+
+    const form = formRef.current;
+    if (!form) {
+      return undefined;
+    }
+
+    const trackField = (fieldName) => {
       const sectionName = getFieldSection(fieldName);
       lastFieldRef.current = fieldName;
       lastSectionRef.current = sectionName;
 
-      const value = getValues(fieldName);
+      const values = getValuesRef.current();
+      const value = values[fieldName];
       const filled = typeof value === 'string' && value.trim().length > 0;
 
       if (!filled) {
-        trackFieldError(fieldName, 'required');
+        return;
+      }
+
+      const fieldError = validateApplication(values)[fieldName];
+      if (fieldError) {
+        trackFieldError(fieldName, mapValidationErrorType(fieldError));
         return;
       }
 
@@ -123,9 +178,75 @@ export function useFormAnalytics({
         engagedRef.current = true;
         trackFormEngaged();
       }
-    },
-    [getValues],
-  );
+    };
+
+    const leaveField = (fieldName) => {
+      window.setTimeout(() => {
+        trackField(fieldName);
+      }, 0);
+    };
+
+    const onCompositionStart = (event) => {
+      if (isFormControl(event.target)) {
+        event.target.composing = true;
+      }
+    };
+
+    const onCompositionEnd = (event) => {
+      const target = event.target;
+      if (!isFormControl(target)) {
+        return;
+      }
+
+      target.composing = false;
+
+      if (document.activeElement !== target && target.name) {
+        leaveField(target.name);
+      }
+    };
+
+    const onFocusOut = (event) => {
+      const target = event.target;
+      if (!isFormControl(target) || !target.name) {
+        return;
+      }
+
+      if (isComposing(target, event)) {
+        return;
+      }
+
+      leaveField(target.name);
+    };
+
+    const rememberField = (event) => {
+      if (!isFormControl(event.target) || !event.target.name) {
+        return;
+      }
+
+      lastFieldRef.current = event.target.name;
+      lastSectionRef.current = getFieldSection(event.target.name);
+    };
+
+    form.addEventListener('compositionstart', onCompositionStart, true);
+    form.addEventListener('compositionend', onCompositionEnd, true);
+    form.addEventListener('focusout', onFocusOut);
+    form.addEventListener('focusin', rememberField);
+    form.addEventListener('input', rememberField, true);
+
+    return () => {
+      form.removeEventListener('compositionstart', onCompositionStart, true);
+      form.removeEventListener('compositionend', onCompositionEnd, true);
+      form.removeEventListener('focusout', onFocusOut);
+      form.removeEventListener('focusin', rememberField);
+      form.removeEventListener('input', rememberField, true);
+    };
+  }, [formRef]);
+
+  const onValidationFailed = useCallback((formErrors) => {
+    for (const [fieldName, error] of Object.entries(formErrors)) {
+      trackFieldError(fieldName, mapValidationErrorType(error));
+    }
+  }, []);
 
   const onSubmitAttempt = useCallback(() => {
     trackSubmitAttempt(position);
@@ -141,7 +262,7 @@ export function useFormAnalytics({
 
   return {
     setSectionRef,
-    onFieldBlur,
+    onValidationFailed,
     onSubmitAttempt,
     onSubmitFailed,
     markFormSubmitted,

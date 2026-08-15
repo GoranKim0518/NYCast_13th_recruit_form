@@ -1,5 +1,7 @@
 # GA4 · GTM 연결 / 스프레드시트 연동
 
+이벤트 전체 목록과 GTM 트리거·변수 명세는 [`ga4-event-spec.md`](./ga4-event-spec.md)를 따릅니다.
+
 행동 분석(퍼널·이탈)과 전환 분석(`generate_lead`)은 **둘 다 동작해야** 합니다.
 
 ```

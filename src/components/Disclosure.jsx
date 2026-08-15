@@ -19,7 +19,8 @@ export default function Disclosure({
   const isOpenRef = useRef(!showTrigger || defaultOpen);
   const [isOpen, setIsOpen] = useState(() => !showTrigger || defaultOpen);
   const resolvedPanelClassName =
-    panelClassName ?? (showTrigger ? 'mt-6 space-y-8' : 'space-y-8');
+    panelClassName ??
+    (showTrigger ? 'mt-6 space-y-6 sm:space-y-8' : 'space-y-6 sm:space-y-8');
 
   const setRootNode = (node) => {
     sectionRef?.(node);

@@ -75,7 +75,7 @@ export default function RecruitmentNotice() {
           />
         </div>
 
-        <h1 className="text-2xl font-bold leading-tight text-gray-900 sm:text-3xl">
+        <h1 className="text-2xl font-bold leading-snug text-gray-900 sm:text-3xl">
           {title}
         </h1>
 

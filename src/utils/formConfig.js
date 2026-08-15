@@ -80,3 +80,110 @@ export function buildSubmissionPayload(data) {
 
   return payload;
 }
+
+export function readFormData(form) {
+  const data = { ...defaultValues };
+
+  if (!form) {
+    return data;
+  }
+
+  const formData = new FormData(form);
+
+  for (const key of Object.keys(defaultValues)) {
+    const value = formData.get(key);
+    if (typeof value === 'string') {
+      data[key] = value;
+    }
+  }
+
+  return data;
+}
+
+function htmlMessage(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (/<[^>]*>/i.test(trimmed) || /<script/i.test(trimmed)) {
+    return 'HTML 또는 Script 태그는 입력할 수 없습니다.';
+  }
+
+  return null;
+}
+
+function setRequired(errors, data, id, message) {
+  if (!data[id] || !String(data[id]).trim()) {
+    errors[id] = { message, type: 'required' };
+    return;
+  }
+
+  const html = htmlMessage(data[id]);
+  if (html) {
+    errors[id] = { message: html, type: 'validate' };
+  }
+}
+
+function setOptional(errors, data, id) {
+  if (!data[id]) {
+    return;
+  }
+
+  const html = htmlMessage(data[id]);
+  if (html) {
+    errors[id] = { message: html, type: 'validate' };
+  }
+}
+
+export function validateApplication(data) {
+  const errors = {};
+
+  setRequired(errors, data, 'name', '이름을 입력해 주세요.');
+  setRequired(errors, data, 'birth_date', '생년월일을 입력해 주세요.');
+  setRequired(errors, data, 'academic_info', '학교 정보를 입력해 주세요.');
+  setRequired(errors, data, 'residence', '거주지를 입력해 주세요.');
+  setRequired(errors, data, 'activity_location', '활동하는 곳을 입력해 주세요.');
+  setRequired(errors, data, 'phone', '연락처를 입력해 주세요.');
+
+  if (!errors.phone && data.phone && !PHONE_REGEX.test(data.phone.trim())) {
+    errors.phone = {
+      message: '010-0000-0000 형식으로 입력해 주세요.',
+      type: 'pattern',
+    };
+  }
+
+  setRequired(errors, data, 'email', '이메일을 입력해 주세요.');
+
+  if (!errors.email && data.email && !EMAIL_REGEX.test(data.email.trim())) {
+    errors.email = {
+      message: '이메일 주소에 @가 포함되어야 합니다.',
+      type: 'pattern',
+    };
+  }
+
+  setRequired(errors, data, 'position', '지원분야를 선택해 주세요.');
+  setRequired(errors, data, 'inspiration_source', '영감의 출처를 입력해 주세요.');
+
+  if (data.position === 'PD') {
+    setOptional(errors, data, 'pd_strategy');
+    setRequired(errors, data, 'pd_idea', '프로그램 아이디어를 입력해 주세요.');
+    setOptional(errors, data, 'pd_tools');
+    setOptional(errors, data, 'pd_experience');
+    setOptional(errors, data, 'pd_comment');
+    setRequired(errors, data, 'pd_inflow_channel', '유입 경로를 입력해 주세요.');
+  } else if (data.position === '홍보마케터') {
+    setOptional(errors, data, 'mkt_strategy');
+    setOptional(errors, data, 'mkt_tools');
+    setOptional(errors, data, 'mkt_experience');
+    setOptional(errors, data, 'mkt_comment');
+    setRequired(errors, data, 'mkt_inflow_channel', '유입 경로를 입력해 주세요.');
+  } else if (data.position === '디자이너') {
+    setOptional(errors, data, 'des_challenge');
+    setOptional(errors, data, 'des_portfolio_url');
+    setOptional(errors, data, 'des_comment');
+    setRequired(errors, data, 'des_inflow_channel', '유입 경로를 입력해 주세요.');
+  }
+
+  return errors;
+}

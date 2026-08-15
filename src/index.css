@@ -16,6 +16,8 @@ body {
   font-family: var(--font-sans);
   background-color: #ffffff;
   color: #111827;
+  word-break: keep-all;
+  overflow-wrap: break-word;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -37,6 +39,7 @@ textarea,
 select {
   font-size: 16px;
   touch-action: manipulation;
+  overflow-anchor: none;
 }
 
 button.touch-manipulation {

@@ -182,6 +182,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS applications_client_submission_id_uidx
 
 ### GA4 마케팅 분석 설정
 
+이벤트 전체 목록과 SPA에서 GTM을 다는 방법은 [`docs/ga4-event-spec.md`](./docs/ga4-event-spec.md)를 따릅니다.
+
 **전송 금지:** 이름, 연락처, 이메일, 작성 텍스트 등 모든 PII  
 **핵심 이벤트(전환):** `generate_lead`, `form_submitted`
 
@@ -212,6 +214,7 @@ https://nycast-13th-recruit-form.vercel.app/?utm_source=instagram&utm_medium=soc
 | `field_name` | 필드 |
 | `error_type` | 검증/제출 오류 유형 |
 | `last_section` / `last_field` | 이탈 직전 위치 |
+| `abandon_type` | `empty` (미작성) / `partial` (작성 중) |
 | `fields_completed_count` | 이탈 시 완료한 필수 필드 수 |
 | `form_session_id` | 세션 단위 유니크 키 (PII 아님, DB 제출 ID와 분리) |
 | `has_gclid` / `has_fbclid` | 광고 클릭 여부 |
@@ -231,7 +234,7 @@ https://nycast-13th-recruit-form.vercel.app/?utm_source=instagram&utm_medium=soc
 | `submit_attempt` / `form_submit` | **검증 통과 후** 제출 | 유효성 실패는 제외 |
 | `form_submitted` / `generate_lead` | DB 저장 성공 | 전환 |
 | `submit_failed` | 네트워크/서버 오류 | `offline`, `timeout`, `config` 등 |
-| `form_abandon` | 실제 페이지 이탈 (`pagehide`) | 탭 전환은 제외, beacon 전송 |
+| `form_abandon` | 실제 페이지 이탈 (`pagehide`) | 탭 전환 제외, beacon. `abandon_type`: `empty` / `partial` |
 | `draft_restored` / `draft_cleared` | 초안 복원/제출 후 삭제 | |
 | `form_completed_view` | 완료 화면 | |
 

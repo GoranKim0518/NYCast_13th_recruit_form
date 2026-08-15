@@ -1,28 +1,22 @@
-import { memo } from 'react';
-import { useFormContext, useFormState } from 'react-hook-form';
 import FormField from './FormField';
 import { getFieldHint, getFieldHtml } from '../constants/formHints';
-import { commitPreviousInput } from '../utils/commitPreviousInput';
 
 const inputClassName =
-  'relative z-10 w-full touch-manipulation rounded-lg border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-400 transition-colors focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20';
+  'w-full min-h-12 touch-manipulation rounded-lg border border-gray-200 bg-white px-4 py-3 text-base leading-normal text-gray-900 placeholder:text-gray-400 transition-colors focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20';
 
 function FieldControl({
   id,
-  rules,
   label,
   required,
   hint,
   html,
   placeholder,
   maxLength,
-  onFieldBlur,
+  defaultValue = '',
+  error,
   multiline = false,
   rows = 5,
 }) {
-  const { register, control } = useFormContext();
-  const { errors } = useFormState({ control, name: id, exact: true });
-  const { ref, onChange, onBlur, name } = register(id, rules);
   const describedBy = [
     html ? `${id}-guidance` : null,
     hint || getFieldHint(id) ? `${id}-hint` : null,
@@ -33,23 +27,17 @@ function FieldControl({
 
   const sharedProps = {
     id,
-    name,
-    ref,
+    name: id,
+    defaultValue,
     placeholder,
     maxLength,
     autoComplete: 'off',
     className: multiline
-      ? `${inputClassName} min-h-[140px] resize-y`
+      ? `${inputClassName} min-h-32 resize-y`
       : inputClassName,
-    'aria-invalid': errors[id] ? 'true' : 'false',
+    'aria-invalid': error ? 'true' : 'false',
     'aria-required': required ? 'true' : 'false',
     'aria-describedby': describedBy,
-    onPointerDown: commitPreviousInput,
-    onChange,
-    onBlur: (event) => {
-      onBlur(event);
-      onFieldBlur?.(id);
-    },
   };
 
   return (
@@ -58,7 +46,7 @@ function FieldControl({
       required={required}
       html={getFieldHtml(id, html)}
       hint={getFieldHint(id, hint)}
-      error={errors[id]?.message}
+      error={error}
       htmlFor={id}
     >
       {multiline ? (
@@ -70,10 +58,10 @@ function FieldControl({
   );
 }
 
-const TextInput = memo(FieldControl);
+export default function TextInput(props) {
+  return <FieldControl {...props} />;
+}
 
-export default TextInput;
-
-export const TextAreaInput = memo(function TextAreaInput(props) {
+export function TextAreaInput(props) {
   return <FieldControl {...props} multiline />;
-});
+}

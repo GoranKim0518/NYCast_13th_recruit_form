@@ -6,8 +6,9 @@ import {
   loadFormCache,
   saveFormCache,
 } from '../lib/formCache';
+import { readFormData } from '../utils/formConfig';
 
-export function useFormCache(watch) {
+export function useFormCache(formRef) {
   const [isRestored, setIsRestored] = useState(false);
   const debounceRef = useRef(null);
 
@@ -16,19 +17,30 @@ export function useFormCache(watch) {
     if (cached && hasMeaningfulDraft(cached)) {
       setIsRestored(true);
     }
+  }, []);
 
-    const subscription = watch((data) => {
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) {
+      return undefined;
+    }
+
+    const persist = () => {
       clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
-        saveFormCache(data);
+        saveFormCache(readFormData(form));
       }, SAVE_DEBOUNCE_MS);
-    });
+    };
+
+    form.addEventListener('input', persist, true);
+    form.addEventListener('change', persist, true);
 
     return () => {
-      subscription.unsubscribe();
+      form.removeEventListener('input', persist, true);
+      form.removeEventListener('change', persist, true);
       clearTimeout(debounceRef.current);
     };
-  }, [watch]);
+  }, [formRef]);
 
   return {
     isRestored,

@@ -1,5 +1,5 @@
 const SUMMARY_CLASS_NAME =
-  'flex w-full cursor-default items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-left transition-colors touch-manipulation hover:border-gray-300 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 [@media(hover:hover)_and_(pointer:fine)]:cursor-pointer';
+  'flex min-h-12 w-full cursor-default items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-left transition-colors touch-manipulation hover:border-gray-300 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 [@media(hover:hover)_and_(pointer:fine)]:cursor-pointer';
 
 export default function AccordionSummary({
   title,

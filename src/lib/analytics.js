@@ -8,6 +8,7 @@ import { getDataLayer, initGtm, pushDataLayer } from './gtm';
 
 const MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
 const FORM_NAME = 'nycast_13th_recruit';
+export const ANALYTICS_ENABLED = true;
 
 let initialized = false;
 let ga4Ready = false;
@@ -27,6 +28,10 @@ function baseParams() {
 }
 
 function sendEvent(name, params = {}, { beacon = false } = {}) {
+  if (!ANALYTICS_ENABLED) {
+    return;
+  }
+
   const payload = {
     ...baseParams(),
     ...params,
@@ -46,7 +51,7 @@ function sendEvent(name, params = {}, { beacon = false } = {}) {
 }
 
 export function initAnalytics() {
-  if (initialized) {
+  if (!ANALYTICS_ENABLED || initialized) {
     return;
   }
 
@@ -124,6 +129,10 @@ export function trackFieldError(fieldName, errorType) {
 }
 
 export function trackPositionSelected(position) {
+  if (!ANALYTICS_ENABLED) {
+    return;
+  }
+
   if (position) {
     getDataLayer().push({ selected_position: position });
   }
@@ -175,6 +184,7 @@ export function trackFormAbandon({
   lastField,
   fieldsCompletedCount,
   positionSelected,
+  abandonType,
 }) {
   sendEvent(
     'form_abandon',
@@ -183,6 +193,7 @@ export function trackFormAbandon({
       last_field: lastField,
       fields_completed_count: fieldsCompletedCount,
       position_selected: positionSelected || '(not set)',
+      abandon_type: abandonType || 'empty',
     },
     { beacon: true },
   );
