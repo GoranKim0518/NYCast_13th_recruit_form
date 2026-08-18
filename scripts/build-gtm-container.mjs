@@ -113,7 +113,6 @@ const DLV_KEYS = [
   ['has_gclid', 'has_gclid'],
   ['has_fbclid', 'has_fbclid'],
   ['position_selected', 'position_selected'],
-  ['selected_position', 'selected_position'],
   ['section_name', 'section_name'],
   ['field_name', 'field_name'],
   ['field_filled', 'field_filled'],

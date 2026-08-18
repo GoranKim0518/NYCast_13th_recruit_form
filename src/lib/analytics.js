@@ -126,7 +126,9 @@ export function initAnalytics() {
           allow_google_signals: false,
           allow_ad_personalization_signals: false,
           send_page_view: false,
-          debug_mode: Boolean(import.meta.env.DEV),
+          debug_mode:
+            Boolean(import.meta.env.DEV) ||
+            ['localhost', '127.0.0.1'].includes(window.location.hostname),
         },
       });
       ga4Ready = true;
@@ -186,15 +188,6 @@ export function trackInputLeave({
 export function trackPositionSelected(position) {
   if (!ANALYTICS_ENABLED) {
     return;
-  }
-
-  if (position) {
-    getDataLayer().push({ selected_position: position });
-    withGa4(() =>
-      ReactGA.gtag('set', 'user_properties', {
-        selected_position: position,
-      }),
-    );
   }
 
   sendEvent('position_selected', {

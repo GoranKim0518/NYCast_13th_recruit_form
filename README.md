@@ -194,8 +194,7 @@ https://nycast-13th-recruit-form.vercel.app/?utm_source=instagram&utm_medium=soc
 2. 향상된 측정 → **양식 상호작용 OFF** (폼 이벤트는 코드에서 직접 전송)
 3. 관리 → 이벤트 → `generate_lead`를 **핵심 이벤트로 표시** (메타 전환도 이것)
 4. 관리 → 맞춤 정의에 아래 이벤트 매개변수를 등록 (범위: 이벤트)
-5. 관리 → 맞춤 정의 → `selected_position` (범위: 사용자)
-6. 관리 → 데이터 필터/비교: `hostname`이 `localhost`인 세션 제외
+5. 관리 → 데이터 필터/비교: `hostname`이 `localhost`인 세션 제외
 
 | 용도 | 매개변수 |
 |------|----------|
@@ -214,7 +213,7 @@ https://nycast-13th-recruit-form.vercel.app/?utm_source=instagram&utm_medium=soc
 | `field_completed` | blur + 검증 통과 | |
 | `input_leave` | 칸을 벗어남 (빈 칸 포함) | 이탈 칸. `field_name`, `field_filled`, `field_valid` |
 | `field_error` | 검증 실패 | |
-| `position_selected` | 기본 정보 통과 후 직군 선택 | 사용자 속성 `selected_position`도 설정. 기본 정보 전에 누르면 이벤트 없음 |
+| `position_selected` | 기본 정보 통과 후 직군 선택 | 이벤트 파라미터로 분석(퍼널 기준). 기본 정보 전에 누르면 이벤트 없음 |
 | `submit_attempt` / `form_submit` | **검증 통과 후** 제출 | 유효성 실패는 제외 |
 | `form_submitted` / `generate_lead` | DB 저장 성공 | 전환 |
 | `submit_failed` | 네트워크/서버 오류 | `offline`, `timeout`, `config` 등 |
@@ -225,6 +224,15 @@ https://nycast-13th-recruit-form.vercel.app/?utm_source=instagram&utm_medium=soc
 Exploration 퍼널:
 
 `form_view → form_start → position_selected → submit_attempt → generate_lead`
+
+- **시도(attempt)**: `submit_attempt`(또는 `form_submit`)
+  - 이 이벤트는 **검증 통과 후**에만 찍힙니다.
+- **성공(success/전환)**: `generate_lead`(또는 `form_submitted`)
+  - DB 저장 성공 이후에 찍히는 전환 이벤트입니다.
+
+- **직군별 퍼널**: 각 step(최소 `submit_attempt`과 `generate_lead`)의 조건에
+  이벤트 파라미터 `position_selected` 값을 `PD` / `홍보마케터` / `디자이너`로 필터링해서
+  퍼널을 만드세요.
 
 `position_selected`는 기본 정보(이름~영감, 형식 포함)를 통과한 뒤에만 찍힙니다.  
 이탈 칸: `input_leave`를 `field_name`으로, `form_abandon`을 `last_field`로 쪼갭니다.
