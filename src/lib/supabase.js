@@ -58,6 +58,19 @@ function isOffline() {
   return typeof navigator !== 'undefined' && navigator.onLine === false;
 }
 
+function isDuplicateSubmission(error) {
+  if (error?.code !== '23505') {
+    return false;
+  }
+
+  const text = `${error.message || ''} ${error.details || ''} ${error.hint || ''}`;
+  if (/client_submission_id/i.test(text)) {
+    return true;
+  }
+
+  return !/applications_pkey|_pkey/i.test(text);
+}
+
 function toSubmitError(error, signal) {
   if (error instanceof SubmitError) {
     return error;
@@ -117,7 +130,7 @@ export async function submitApplication(data) {
 
     if (error) {
       // 같은 탭에서 재시도: UNIQUE 충돌은 이미 저장된 것으로 본다.
-      if (error.code === '23505') {
+      if (isDuplicateSubmission(error)) {
         clearSubmissionId();
         return;
       }

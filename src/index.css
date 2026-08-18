@@ -9,6 +9,8 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  hanging-punctuation: first last;
+  overflow-anchor: none;
 }
 
 body {
@@ -18,6 +20,10 @@ body {
   color: #111827;
   word-break: keep-all;
   overflow-wrap: break-word;
+  line-height: 1.75;
+  letter-spacing: -0.02em;
+  text-wrap: pretty;
+  overflow-anchor: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -39,6 +45,7 @@ textarea,
 select,
 button {
   font-family: inherit;
+  letter-spacing: 0;
 }
 
 input:not([type='checkbox']):not([type='radio']),

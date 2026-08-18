@@ -180,7 +180,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS applications_client_submission_id_uidx
 이벤트 이름·GTM 트리거·UTM·시트 동기화 명세는 로컬 `docs/`에만 둡니다. 공개 저장소에는 포함하지 않습니다.
 
 **전송 금지:** 이름, 연락처, 이메일, 작성 텍스트 등 모든 PII  
-**핵심 이벤트(전환):** `generate_lead`, `form_submitted`
+**핵심 이벤트(전환):** `generate_lead`
 
 랜딩 URL에 UTM을 붙이면 세션 획득(소스/매체/캠페인)과 모든 이벤트 파라미터에 같이 남습니다.
 
@@ -192,28 +192,16 @@ https://nycast-13th-recruit-form.vercel.app/?utm_source=instagram&utm_medium=soc
 
 1. 데이터 스트림 웹 URL: `https://nycast-13th-recruit-form.vercel.app`
 2. 향상된 측정 → **양식 상호작용 OFF** (폼 이벤트는 코드에서 직접 전송)
-3. 관리 → 이벤트 → `generate_lead`, `form_submitted`를 **핵심 이벤트로 표시**
+3. 관리 → 이벤트 → `generate_lead`를 **핵심 이벤트로 표시** (메타 전환도 이것)
 4. 관리 → 맞춤 정의에 아래 이벤트 매개변수를 등록 (범위: 이벤트)
 5. 관리 → 맞춤 정의 → `selected_position` (범위: 사용자)
 6. 관리 → 데이터 필터/비교: `hostname`이 `localhost`인 세션 제외
 
-| 매개변수 | 용도 |
-|----------|------|
-| `campaign_source` | 유입 소스 (utm_source / 리퍼러 / direct) |
-| `campaign_medium` | 유입 매체 |
-| `campaign_name` | 캠페인명 |
-| `campaign_content` | 소재 구분 |
-| `campaign_term` | 검색어 |
-| `position_selected` | 지원 직군 |
-| `section_name` | 폼 섹션 |
-| `field_name` | 필드 |
-| `error_type` | 검증/제출 오류 유형 |
-| `last_section` / `last_field` | 이탈 직전 위치 |
-| `abandon_type` | `empty` (미작성) / `partial` (작성 중) |
-| `fields_completed_count` | 이탈 시 완료한 필수 필드 수 |
-| `form_session_id` | 세션 단위 유니크 키 (PII 아님, DB 제출 ID와 분리) |
-| `has_gclid` / `has_fbclid` | 광고 클릭 여부 |
-| `lead_source` | `generate_lead` 유입 소스 |
+| 용도 | 매개변수 |
+|------|----------|
+| 유입 | `campaign_source`, `campaign_medium`, `campaign_name`, `campaign_content`, `campaign_term`, `has_fbclid`, `lead_source` |
+| 행동 | `position_selected`, `section_name`, `field_name`, `field_filled`, `field_valid`, `error_type`, `disclosure_action`, `disclosure_trigger` |
+| 이탈 | `last_section`, `last_field`, `abandon_type`, `fields_completed_count` |
 
 #### 이벤트
 

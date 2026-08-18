@@ -17,7 +17,7 @@ export default function AccordionSummary({
       onClick={onClick}
     >
       <span className="min-w-0">
-        <span className="block text-base font-bold text-gray-900 sm:text-lg">
+        <span className="block text-pretty text-base font-bold tracking-tight text-gray-900 sm:text-lg">
           {title}
         </span>
         {closedHint && !isOpen && (

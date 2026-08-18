@@ -17,7 +17,7 @@ export default function FormField({
     <div className="space-y-2">
       <label
         htmlFor={htmlFor}
-        className="block text-base font-semibold text-gray-900"
+        className="block text-pretty text-base font-semibold leading-snug tracking-tight text-gray-900"
       >
         {label}
         {required && (

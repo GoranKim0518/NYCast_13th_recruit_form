@@ -15,9 +15,15 @@ export const RECRUITMENT_INFO = {
       title: '13기 신입 국원 Apply',
       subTitle:
         '2026년 하반기부터 ‘노원유쓰캐스트 NYCast’와 함께 노원을 담아낼\n<b>PD(크리에이터)</b>, <b>홍보마케터</b>, <b>디자이너</b>를 모집합니다 📢',
+      subTitleMobile:
+        '2026년 하반기부터 ‘노원유쓰캐스트 NYCast’와 함께 <nowrap>노원을 담아낼</nowrap> <b>PD(크리에이터)</b>, <b>홍보마케터</b>, <b>디자이너</b>를 모집합니다 📢',
       introText: [
-        "<b>개인 장비나 기술이 없어도 배우면서 활동 가능합니다.</b> 영상 콘텐츠와 홍보, 디자인 각 분야별 관심과 '노원구'라는 지역에 대한 애정을 바탕으로 배움과 경험, 네트워크를 쌓으며 성장하고 싶은 당신,",
+        "<b>개인 장비나 기술이 없어도 배우면서 활동 가능합니다.</b> <nowrap>영상 콘텐츠</nowrap>와 홍보, 디자인 각 분야별 관심과 '노원구'라는 지역에 대한 애정을 바탕으로 배움과 경험, 네트워크를 쌓으며 성장하고 싶은 당신,",
         '지금 바로 지원하세요! <b>노원에서 우리의 볼륨을 최대치로!🔊</b>',
+      ],
+      introTextMobile: [
+        '<b>개인 장비나 기술이 없어도 배우면서 활동할 수 있습니다.</b> <nowrap>영상 콘텐츠</nowrap>, 홍보, 디자인 각 분야에 관심 있고 <nowrap>‘노원구’를 사랑하는 분</nowrap>을 찾습니다. 배움과 경험, 네트워크를 쌓으며 함께 성장할 수 있습니다.',
+        '지금 바로 지원하세요! <b>노원에서 우리의 볼륨을 최대치로!</b>',
       ],
       about: {
         title: '💡 노원유쓰캐스트 NYCast',
@@ -27,9 +33,12 @@ export const RECRUITMENT_INFO = {
       learnMore: {
         title: '💡 더 알고 싶다면',
         siteUrl: 'https://nycast.net',
-        siteLabel: 'https://nycast.net',
-        siteSuffix: " 의 'About 노원유쓰캐스트' 혹은 ",
-        wikiLink: { text: '위키문서', url: 'https://namu.wiki/w/노원유쓰캐스트%20NYCast' },
+        siteLabel: '노원유쓰캐스트 링크트리',
+        siteSuffix: "의 'About 노원유쓰캐스트' 혹은 ",
+        wikiLink: {
+          text: '위키문서',
+          url: 'https://namu.wiki/w/노원유쓰캐스트%20NYCast',
+        },
         interviewLinks: [
           {
             text: '[노원 iN터뷰] 노리에게 묻다 | 노원유쓰캐스트 NYCast에 대하여',

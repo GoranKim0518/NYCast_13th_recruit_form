@@ -24,7 +24,11 @@ export function useFormCache(formRef) {
       return undefined;
     }
 
-    const persist = () => {
+    const persist = (event) => {
+      if (event?.isComposing || event?.target?.composing) {
+        return;
+      }
+
       clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
         saveMountedFormCache(form);

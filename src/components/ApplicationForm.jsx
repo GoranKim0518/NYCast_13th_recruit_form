@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { flushSync } from 'react-dom';
 import { useFormAnalytics } from '../hooks/useFormAnalytics';
 import { useFormCache } from '../hooks/useFormCache';
+import { useImeStableFocus } from '../hooks/useImeStableFocus';
 import { sanitizeFormData } from '../lib/sanitize';
 import { getInitialFormValues, loadFormCache, saveMountedFormCache } from '../lib/formCache';
 import { submitApplication } from '../lib/supabase';
@@ -197,6 +198,7 @@ export default function ApplicationForm({ onSuccess }) {
   const commonFieldsRef = useRef(null);
   const skipAutoScrollRef = useRef(true);
   const submitAttemptedRef = useRef(false);
+  const isSubmittingRef = useRef(false);
   const positionRef = useRef(defaults.position);
   const errorsRef = useRef({});
   const lastBasicFieldRef = useRef('name');
@@ -213,6 +215,7 @@ export default function ApplicationForm({ onSuccess }) {
   }, []);
 
   const { isRestored, clearCacheOnSubmit } = useFormCache(formRef);
+  useImeStableFocus(formRef);
 
   const {
     setSectionRef,
@@ -468,6 +471,11 @@ export default function ApplicationForm({ onSuccess }) {
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();
+
+    if (isSubmittingRef.current) {
+      return;
+    }
+
     submitAttemptedRef.current = true;
 
     const rawData = readFormData(event.currentTarget);
@@ -486,6 +494,8 @@ export default function ApplicationForm({ onSuccess }) {
     const data = sanitizeFormData(rawData);
     const payload = buildSubmissionPayload(data);
 
+    isSubmittingRef.current = true;
+    saveMountedFormCache(formRef.current);
     onSubmitAttempt();
     setIsSubmitting(true);
 
@@ -503,6 +513,7 @@ export default function ApplicationForm({ onSuccess }) {
           '제출 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
       );
     } finally {
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -685,7 +696,7 @@ export default function ApplicationForm({ onSuccess }) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="min-h-12 w-full cursor-pointer rounded-lg bg-violet-600 px-6 py-3 text-base font-semibold text-white transition-colors touch-manipulation hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          className="min-h-12 w-full cursor-pointer rounded-lg bg-violet-600 px-6 py-3 text-base font-semibold leading-5 text-white transition-colors touch-manipulation hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? '제출 중...' : '지원서 제출하기'}
         </button>
