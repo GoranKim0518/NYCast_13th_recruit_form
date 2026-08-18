@@ -14,31 +14,20 @@
     />
     <title>노원유쓰캐스트 13기 신입 국원 모집 지원서</title>
 
-    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-
     <!--
       카카오톡 iOS 인앱 브라우저(WKWebView)는 window.load가 발생할 때까지
       자체 로딩 인디케이터를 유지한다. 외부 도메인 리소스를 load 이전에 걸면
-      해당 CDN이 느리거나 차단됐을 때 로딩이 끝나지 않은 것처럼 보이므로,
-      웹폰트와 태그 스크립트는 모두 load 이후에 주입한다.
+      해당 도메인이 느리거나 차단됐을 때 로딩이 끝나지 않은 것처럼 보이므로,
+      태그 스크립트는 load 이후에 주입한다.
+      (웹폰트는 같은 출처에서 서빙하므로 번들 CSS에 그대로 둔다.)
     -->
     <script>
       (function () {
-        var WEBFONT_HREF =
-          'https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.3/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css';
         var GTM_ID = 'GTM-T5GT7DDJ';
 
         window.dataLayer = window.dataLayer || [];
         // src/lib/gtm.js가 중복 주입하지 않도록 알린다.
         window.__nycastGtmHandled = true;
-
-        function injectWebfont() {
-          var link = document.createElement('link');
-          link.rel = 'stylesheet';
-          link.href = WEBFONT_HREF;
-          document.head.appendChild(link);
-        }
 
         function injectGtm() {
           window.dataLayer.push({
@@ -53,30 +42,19 @@
           document.head.appendChild(script);
         }
 
-        function bootstrapThirdParty() {
-          injectWebfont();
-          injectGtm();
-        }
-
         if (document.readyState === 'complete') {
-          window.setTimeout(bootstrapThirdParty, 0);
+          window.setTimeout(injectGtm, 0);
         } else {
           window.addEventListener(
             'load',
             function () {
-              window.setTimeout(bootstrapThirdParty, 0);
+              window.setTimeout(injectGtm, 0);
             },
             { once: true },
           );
         }
       })();
     </script>
-    <noscript>
-      <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.3/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css"
-      />
-    </noscript>
   </head>
   <body>
     <noscript>

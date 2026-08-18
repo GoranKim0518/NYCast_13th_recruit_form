@@ -194,7 +194,7 @@ results.push(await run({ label: 'storage 접근 차단', blockStorage: true }));
 results.push(await run({ label: 'crypto.randomUUID 미지원 (구형 WebKit)', blockCrypto: true }));
 results.push(await runGa4QueueCheck());
 
-// load 이후로 미룬 웹폰트가 실제로 적용되는지 확인한다.
+// 웹폰트가 같은 출처에서 첫 페인트 시점에 이미 적용되는지 확인한다.
 async function runWebfontCheck() {
   const browser = await chromium.launch();
 
@@ -211,33 +211,47 @@ async function runWebfontCheck() {
     const errors = [];
     page.on('pageerror', (error) => errors.push(String(error)));
 
-    await page.goto(BASE, { waitUntil: 'load' });
+    const fontRequests = [];
+    page.on('request', (request) => {
+      if (request.url().endsWith('.woff2')) {
+        fontRequests.push(request.url());
+      }
+    });
 
-    const applied = await page
+    // 첫 페인트 시점(load 이전)에 이미 폰트가 실제로 쓰이는지 본다.
+    await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+    const readyAtFirstPaint = await page
       .waitForFunction(
-        () =>
-          Array.from(document.styleSheets).some((sheet) =>
-            (sheet.href || '').includes('cdn.jsdelivr.net'),
-          ),
+        () => document.fonts.check('1em "Wanted Sans Variable"'),
         null,
-        { timeout: 10000 },
+        { timeout: 5000 },
       )
       .then(() => true)
       .catch(() => false);
 
-    const usedFont = await page.evaluate(() =>
-      getComputedStyle(document.body).fontFamily,
+    await page.waitForLoadState('load');
+
+    const crossOrigin = fontRequests.filter((url) => !url.startsWith(BASE));
+    const usedFont = await page.evaluate(
+      () => getComputedStyle(document.body).fontFamily,
     );
     const headingVisible = await page.locator('h1').first().isVisible();
-    const ok = applied && headingVisible && errors.length === 0;
+    const ok =
+      readyAtFirstPaint &&
+      fontRequests.length > 0 &&
+      crossOrigin.length === 0 &&
+      headingVisible &&
+      errors.length === 0;
     allOk = allOk && ok;
 
-    console.log(`\n[웹폰트 지연 로딩 — ${label}]`);
-    console.log(`  jsdelivr 스타일시트 적용 : ${applied}`);
-    console.log(`  body font-family         : ${usedFont}`);
-    console.log(`  h1 표시                  : ${headingVisible}`);
-    console.log(`  pageerror                : ${errors.length ? errors.join(' | ') : '없음'}`);
-    console.log(`  결과                     : ${ok ? 'PASS' : 'FAIL'}`);
+    console.log(`\n[웹폰트 자체 호스팅 — ${label}]`);
+    console.log(`  첫 페인트에 폰트 준비  : ${readyAtFirstPaint}`);
+    console.log(`  woff2 요청 수          : ${fontRequests.length}`);
+    console.log(`  외부 도메인 폰트 요청  : ${crossOrigin.length ? crossOrigin.join(' | ') : '없음'}`);
+    console.log(`  body font-family       : ${usedFont}`);
+    console.log(`  h1 표시                : ${headingVisible}`);
+    console.log(`  pageerror              : ${errors.length ? errors.join(' | ') : '없음'}`);
+    console.log(`  결과                   : ${ok ? 'PASS' : 'FAIL'}`);
 
     await context.close();
   }
