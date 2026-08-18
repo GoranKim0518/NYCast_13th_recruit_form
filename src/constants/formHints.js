@@ -17,7 +17,7 @@ function mailLink(email = CONTACT_EMAIL) {
 const SOFTWARE_LIST = `<p>(포토샵, 일러스트레이터, 프리미어, 파이널컷, 피그마, CapCut, Vllo, 나노바나나, 미드저니, 클링, 베오)</p>`;
 
 const STRATEGY_HTML = `<p>아래는 노원유쓰캐스트의 콘텐츠입니다.</p>
-<p>인스타그램: ${extLink(INSTAGRAM_URL)}</p>
+<p>인스타: ${extLink(INSTAGRAM_URL)}</p>
 <p>유튜브: ${extLink(YOUTUBE_URL)}</p>
 <ul>
   <li>
