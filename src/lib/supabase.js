@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { createId } from './uuid';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -45,7 +46,7 @@ export function getOrCreateSubmissionId() {
     return existing;
   }
 
-  const id = crypto.randomUUID();
+  const id = createId();
   storage?.setItem(SUBMISSION_ID_KEY, id);
   return id;
 }

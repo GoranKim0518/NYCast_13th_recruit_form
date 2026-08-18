@@ -1,3 +1,5 @@
+import { createId } from './uuid';
+
 const CAMPAIGN_KEY = 'nycast_13th_campaign_v1';
 const SESSION_KEY = 'nycast_13th_analytics_session_v1';
 
@@ -69,7 +71,7 @@ export function getAnalyticsSessionId() {
     return existing;
   }
 
-  const id = crypto.randomUUID();
+  const id = createId();
   storage?.setItem(SESSION_KEY, id);
   return id;
 }

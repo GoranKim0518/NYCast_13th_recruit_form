@@ -88,6 +88,7 @@ export default function RecruitmentNotice() {
             alt={banner.alt}
             width={banner.width}
             height={banner.height}
+            decoding="async"
             className="block h-auto w-full max-w-full"
           />
         </div>
@@ -243,6 +244,8 @@ export default function RecruitmentNotice() {
         <img
           src={posterSrc}
           alt={posterAlt}
+          loading="lazy"
+          decoding="async"
           className="block h-auto w-full max-w-full"
         />
       </div>

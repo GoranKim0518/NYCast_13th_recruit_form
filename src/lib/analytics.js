@@ -4,15 +4,44 @@ import {
   getAnalyticsSessionId,
   getCampaignEventParams,
 } from './campaign';
+import { runAfterLoad } from './afterLoad';
 import { getDataLayer, initGtm, pushDataLayer } from './gtm';
 
 const MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
 const FORM_NAME = 'nycast_13th_recruit';
+const MAX_QUEUED_GA4_CALLS = 100;
 export const ANALYTICS_ENABLED = true;
 
 let initialized = false;
 let ga4Ready = false;
 let viewedAt = 0;
+
+// GA4는 load 이후에 초기화되므로 그 전의 호출은 순서를 유지한 채 큐에 담는다.
+let queuedGa4Calls = [];
+
+function withGa4(call) {
+  if (ga4Ready) {
+    call();
+    return;
+  }
+
+  if (queuedGa4Calls.length < MAX_QUEUED_GA4_CALLS) {
+    queuedGa4Calls.push(call);
+  }
+}
+
+function flushGa4Queue() {
+  const calls = queuedGa4Calls;
+  queuedGa4Calls = [];
+
+  for (const call of calls) {
+    try {
+      call();
+    } catch (error) {
+      console.warn('[analytics] queued call failed', error);
+    }
+  }
+}
 
 function engagementTimeMsec() {
   return viewedAt ? Math.max(0, Date.now() - viewedAt) : 0;
@@ -39,15 +68,11 @@ function sendEvent(name, params = {}, { beacon = false } = {}) {
 
   pushDataLayer(name, payload);
 
-  if (!ga4Ready) {
-    return;
-  }
-
   const gaPayload = beacon
     ? { ...payload, transport_type: 'beacon' }
     : payload;
 
-  ReactGA.event(name, gaPayload);
+  withGa4(() => ReactGA.event(name, gaPayload));
 }
 
 export function initAnalytics() {
@@ -66,22 +91,6 @@ export function initAnalytics() {
   const measurementId =
     typeof MEASUREMENT_ID === 'string' ? MEASUREMENT_ID.trim() : '';
 
-  if (measurementId) {
-    ReactGA.initialize(measurementId, {
-      gaOptions: {
-        anonymize_ip: true,
-      },
-      gtagOptions: {
-        anonymize_ip: true,
-        allow_google_signals: false,
-        allow_ad_personalization_signals: false,
-        send_page_view: false,
-        debug_mode: Boolean(import.meta.env.DEV),
-      },
-    });
-    ga4Ready = true;
-  }
-
   const pagePath = `${window.location.pathname}${window.location.search}`;
   const pageParams = {
     ...baseParams(),
@@ -92,13 +101,41 @@ export function initAnalytics() {
 
   pushDataLayer('page_view', pageParams);
 
-  if (ga4Ready) {
+  if (!measurementId) {
+    return;
+  }
+
+  withGa4(() =>
     ReactGA.send({
       hitType: 'pageview',
       page: pagePath,
       title: document.title,
-    });
-  }
+    }),
+  );
+
+  // gtag/js는 async여도 load 이전에 삽입되면 load 이벤트를 지연시킨다.
+  // 인앱 브라우저의 무한 로딩을 막기 위해 초기화 자체를 load 이후로 미룬다.
+  runAfterLoad(() => {
+    try {
+      ReactGA.initialize(measurementId, {
+        gaOptions: {
+          anonymize_ip: true,
+        },
+        gtagOptions: {
+          anonymize_ip: true,
+          allow_google_signals: false,
+          allow_ad_personalization_signals: false,
+          send_page_view: false,
+          debug_mode: Boolean(import.meta.env.DEV),
+        },
+      });
+      ga4Ready = true;
+      flushGa4Queue();
+    } catch (error) {
+      queuedGa4Calls = [];
+      console.warn('[analytics] GA4 init failed', error);
+    }
+  });
 }
 
 export function trackFormView() {
@@ -153,12 +190,11 @@ export function trackPositionSelected(position) {
 
   if (position) {
     getDataLayer().push({ selected_position: position });
-  }
-
-  if (ga4Ready && position) {
-    ReactGA.gtag('set', 'user_properties', {
-      selected_position: position,
-    });
+    withGa4(() =>
+      ReactGA.gtag('set', 'user_properties', {
+        selected_position: position,
+      }),
+    );
   }
 
   sendEvent('position_selected', {

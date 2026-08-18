@@ -1,42 +1,84 @@
 <!doctype html>
 <html lang="ko">
   <head>
-    <!-- Google Tag Manager -->
-    <script>
-      (function (w, d, s, l, i) {
-        w[l] = w[l] || [];
-        w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
-        var f = d.getElementsByTagName(s)[0],
-          j = d.createElement(s),
-          dl = l != 'dataLayer' ? '&l=' + l : '';
-        j.async = true;
-        j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
-        f.parentNode.insertBefore(j, f);
-      })(window, document, 'script', 'dataLayer', 'GTM-T5GT7DDJ');
-    </script>
-    <!-- End Google Tag Manager -->
     <meta charset="UTF-8" />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.3/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css"
-    />
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="apple-touch-icon" href="/favicon.png" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=overlays-content"
     />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
     <meta
       name="description"
       content="노원유쓰캐스트 13기 신입 국원 모집 지원서"
     />
     <title>노원유쓰캐스트 13기 신입 국원 모집 지원서</title>
+
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+
+    <!--
+      카카오톡 iOS 인앱 브라우저(WKWebView)는 window.load가 발생할 때까지
+      자체 로딩 인디케이터를 유지한다. 외부 도메인 리소스를 load 이전에 걸면
+      해당 CDN이 느리거나 차단됐을 때 로딩이 끝나지 않은 것처럼 보이므로,
+      웹폰트와 태그 스크립트는 모두 load 이후에 주입한다.
+    -->
     <script>
-      window.dataLayer = window.dataLayer || [];
+      (function () {
+        var WEBFONT_HREF =
+          'https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.3/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css';
+        var GTM_ID = 'GTM-T5GT7DDJ';
+
+        window.dataLayer = window.dataLayer || [];
+        // src/lib/gtm.js가 중복 주입하지 않도록 알린다.
+        window.__nycastGtmHandled = true;
+
+        function injectWebfont() {
+          var link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = WEBFONT_HREF;
+          document.head.appendChild(link);
+        }
+
+        function injectGtm() {
+          window.dataLayer.push({
+            'gtm.start': new Date().getTime(),
+            event: 'gtm.js',
+          });
+          var script = document.createElement('script');
+          script.id = 'gtm-script';
+          script.async = true;
+          script.src =
+            'https://www.googletagmanager.com/gtm.js?id=' + GTM_ID;
+          document.head.appendChild(script);
+        }
+
+        function bootstrapThirdParty() {
+          injectWebfont();
+          injectGtm();
+        }
+
+        if (document.readyState === 'complete') {
+          window.setTimeout(bootstrapThirdParty, 0);
+        } else {
+          window.addEventListener(
+            'load',
+            function () {
+              window.setTimeout(bootstrapThirdParty, 0);
+            },
+            { once: true },
+          );
+        }
+      })();
     </script>
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.3/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css"
+      />
+    </noscript>
   </head>
   <body>
-    <!-- Google Tag Manager (noscript) -->
     <noscript>
       <iframe
         src="https://www.googletagmanager.com/ns.html?id=GTM-T5GT7DDJ"
@@ -46,7 +88,6 @@
         title="Google Tag Manager"
       ></iframe>
     </noscript>
-    <!-- End Google Tag Manager (noscript) -->
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

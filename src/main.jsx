@@ -39,7 +39,12 @@ console.log(
   ].join(';'),
 );
 
-initAnalytics();
+// 분석 초기화가 실패해도(인앱 브라우저의 storage/crypto 제약 등) 폼은 반드시 렌더한다.
+try {
+  initAnalytics();
+} catch (error) {
+  console.warn('[analytics] init skipped', error);
+}
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

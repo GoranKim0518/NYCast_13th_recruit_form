@@ -8,7 +8,16 @@ const SAVE_DEBOUNCE_MS = 600;
 export { SAVE_DEBOUNCE_MS };
 
 function isBrowser() {
-  return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  // 인앱 브라우저나 쿠키 차단 환경에서는 localStorage 접근 자체가 throw한다.
+  try {
+    return Boolean(window.localStorage);
+  } catch {
+    return false;
+  }
 }
 
 export function hasMeaningfulDraft(data) {
